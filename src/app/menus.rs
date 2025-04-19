@@ -16,10 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod wallpaper;
+pub mod about;
+pub mod bluetooth;
 pub mod main_menu;
 pub mod sip;
-pub mod about;
-pub mod wifi;
-pub mod bluetooth;
 pub mod sound;
+pub mod wallpaper;
+pub mod wifi;

@@ -16,11 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::app::{MyApp, Menu};
-
+use crate::app::{Menu, MyApp};
 
 use eframe::egui;
-use eframe::egui::{RichText};
+use eframe::egui::RichText;
 
 use std::process::Command;
 
@@ -34,20 +33,21 @@ pub struct SoundData {
     last_volume: u8,
 }
 
-
 /// VERY expensive function. Do NOT call unless required
 fn get_volume() -> u8 {
-    String::from_utf8(Command::new("osascript")
-        .arg("-e")
-        .arg("output volume of (get volume settings)")
-        .output()
-        .unwrap()
-        .stdout)
-        .unwrap()
-        .strip_suffix("\n")
-        .unwrap()
-        .parse::<u8>()
-        .unwrap()
+    String::from_utf8(
+        Command::new("osascript")
+            .arg("-e")
+            .arg("output volume of (get volume settings)")
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .unwrap()
+    .strip_suffix("\n")
+    .unwrap()
+    .parse::<u8>()
+    .unwrap()
 }
 
 /// VERY expensive function. Do NOT call unless required
@@ -77,15 +77,17 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label(RichText::new("Sound Menu:").size(36.0));
 
-            ui.label(format!("The volume is currently: {}%", app.sound_data.last_volume));
+            ui.label(format!(
+                "The volume is currently: {}%",
+                app.sound_data.last_volume
+            ));
             if ui.button("Reload").clicked() {
                 app.sound_data.reload_not_needed = false;
             }
 
-
             ui.add_sized(
                 size,
-                egui::Slider::new(&mut app.sound_data.slider_value, 0.0..=100.0).text("New Volume")
+                egui::Slider::new(&mut app.sound_data.slider_value, 0.0..=100.0).text("New Volume"),
             );
 
             if ui.button("Apply").clicked() {

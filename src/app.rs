@@ -20,16 +20,15 @@ mod menus;
 
 pub mod password;
 
+use crate::app::menus::sound::SoundData;
+use crate::app::menus::wallpaper::WallpaperData;
+use crate::app::menus::wifi::WifiData;
 use eframe::egui;
 use eframe::egui::RichText;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
-use crate::app::menus::sound::SoundData;
-use crate::app::menus::wallpaper::WallpaperData;
-use crate::app::menus::wifi::WifiData;
 
-#[derive(Display, EnumIter)]
-#[derive(Default)]
+#[derive(Display, EnumIter, Default)]
 enum Menu {
     #[default]
     Main,
@@ -37,8 +36,8 @@ enum Menu {
     Bluetooth,
     Wallpaper,
     Sound,
-    SIP,
-    About
+    Sip,
+    About,
 }
 #[derive(Default)]
 pub struct MyApp {
@@ -81,7 +80,7 @@ impl eframe::App for MyApp {
         match self.selected_menu {
             Menu::Main => menus::main_menu::main(self, ctx),
             Menu::Wallpaper => menus::wallpaper::main(self, ctx),
-            Menu::SIP => menus::sip::main(self, ctx),
+            Menu::Sip => menus::sip::main(self, ctx),
             Menu::WiFi => menus::wifi::main(self, ctx),
             Menu::Bluetooth => menus::bluetooth::main(self, ctx),
             Menu::Sound => menus::sound::main(self, ctx),

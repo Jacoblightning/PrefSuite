@@ -16,11 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::app::{MyApp, Menu};
-
+use crate::app::{Menu, MyApp};
 
 use eframe::egui;
-use eframe::egui::{RichText};
+use eframe::egui::RichText;
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {

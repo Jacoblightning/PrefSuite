@@ -16,11 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::app::{MyApp, Menu};
-
+use crate::app::{Menu, MyApp};
 
 use eframe::egui;
-use eframe::egui::{RichText};
+use eframe::egui::RichText;
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {
@@ -40,8 +39,11 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             if ui.button(RichText::new("Sound").size(20.0)).clicked() {
                 app.selected_menu = Menu::Sound;
             }
-            if ui.button(RichText::new("System Integrity Protection").size(20.0)).clicked() {
-                app.selected_menu = Menu::SIP;
+            if ui
+                .button(RichText::new("System Integrity Protection").size(20.0))
+                .clicked()
+            {
+                app.selected_menu = Menu::Sip;
             }
         })
     });

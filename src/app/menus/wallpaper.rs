@@ -17,8 +17,8 @@
 */
 
 use crate::app::{Menu, MyApp};
-use std::path::PathBuf;
 use rusqlite::Connection;
+use std::path::PathBuf;
 
 use eframe::egui;
 use eframe::egui::RichText;
@@ -37,7 +37,7 @@ pub struct WallpaperData {
     wpaper: Option<Result<String, String>>,
 }
 
-fn kill_dock(){
+fn kill_dock() {
     let s = sysinfo::System::new_all();
 
     for process in s.processes().values() {
@@ -47,9 +47,10 @@ fn kill_dock(){
     }
 }
 
-
 // TODO: This
-fn get_current_wallpaper_pre_mavericks() -> Result<String, String> {Ok("".into())}
+fn get_current_wallpaper_pre_mavericks() -> Result<String, String> {
+    Ok("".into())
+}
 
 fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
     let homedir = std::env::var("HOME");
@@ -58,24 +59,29 @@ fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
     }
     let homedir = homedir.unwrap();
 
-    let db: PathBuf = [&homedir, "Library/Application Support/Dock/desktoppicture.db"].iter().collect();
+    let db: PathBuf = [
+        &homedir,
+        "Library/Application Support/Dock/desktoppicture.db",
+    ]
+    .iter()
+    .collect();
     if !db.exists() {
-        return Err(String::from("Database file not found :("))
+        return Err(String::from("Database file not found :("));
     }
 
     let conn = Connection::open(db);
 
-    if conn.is_err() {
-        return Err(conn.unwrap_err().to_string());
+    if let Err(con) = conn {
+        return Err(con.to_string());
     }
 
     let conn = conn.unwrap();
 
-    let mut stmt = conn.prepare("SELECT cast(value as text) from data ORDER BY rowid DESC").unwrap();
+    let mut stmt = conn
+        .prepare("SELECT cast(value as text) from data ORDER BY rowid DESC")
+        .unwrap();
 
-    let iter = stmt.query_map([], |row| {
-        row.get(0)
-    }).unwrap();
+    let iter = stmt.query_map([], |row| row.get(0)).unwrap();
 
     let mut values: Vec<String> = Vec::new();
 
@@ -100,14 +106,20 @@ fn get_current_wallpaper_sonoma_plus() -> Result<String, String> {
         .arg("tell app \"finder\" to get posix path of (get desktop picture as alias)")
         .output();
 
-    if osascript.is_err() {
-        return Err(osascript.unwrap_err().to_string());
+    if let Err(osaerr) = osascript {
+        return Err(osaerr.to_string());
     }
-    Ok(String::from_utf8(osascript.unwrap().stdout).unwrap().strip_suffix('\n').unwrap().to_string())
+    Ok(String::from_utf8(osascript.unwrap().stdout)
+        .unwrap()
+        .strip_suffix('\n')
+        .unwrap()
+        .to_string())
 }
 
 // TODO: Modify the plist file
-fn change_wallpaper_pre_mavericks(new_path: &str) -> Result<(), String> {Ok(())}
+#[allow(unused_variables)] fn change_wallpaper_pre_mavericks(new_path: &str) -> Result<(), String> {
+    Ok(())
+}
 
 /// This is only possible thanks to the amazing reverse engineering work done over here. Give them a star.
 /// https://github.com/tech-otaku/macos-desktop
@@ -118,33 +130,54 @@ fn change_wallpaper_mavericks_to_sonoma(new_path: &str) -> Result<(), String> {
     }
     let homedir = homedir.unwrap();
 
-    let db: PathBuf = [&homedir, "Library/Application Support/Dock/desktoppicture.db"].iter().collect();
+    let db: PathBuf = [
+        &homedir,
+        "Library/Application Support/Dock/desktoppicture.db",
+    ]
+    .iter()
+    .collect();
     if !db.exists() {
-        return Err(String::from("Database file not found :("))
+        return Err(String::from("Database file not found :("));
     }
 
     let conn = Connection::open(db);
 
-    if conn.is_err() {
-        return Err(conn.unwrap_err().to_string());
+    if let Err(con) = conn {
+        return Err(con.to_string());
     }
 
     let conn = conn.unwrap();
 
     // Delete old data
-    conn.execute("DELETE FROM data;",        ()).unwrap();
+    conn.execute("DELETE FROM data;", ()).unwrap();
     conn.execute("DELETE FROM preferences;", ()).unwrap();
 
     // Add new data
-    conn.execute("INSERT INTO data(rowid,value) VALUES (1,?1)", [new_path]).unwrap();
+    conn.execute("INSERT INTO data(rowid,value) VALUES (1,?1)", [new_path])
+        .unwrap();
 
-    conn.execute("INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (1,1,1,3)", ()).unwrap();
-    conn.execute("INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (2,1,1,4)", ()).unwrap();
-    conn.execute("INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (3,1,1,2)", ()).unwrap();
-    conn.execute("INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (4,1,1,1)", ()).unwrap();
+    conn.execute(
+        "INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (1,1,1,3)",
+        (),
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (2,1,1,4)",
+        (),
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (3,1,1,2)",
+        (),
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO preferences(rowid,key,data_id,picture_id) VALUES (4,1,1,1)",
+        (),
+    )
+    .unwrap();
 
     conn.close().unwrap();
-
 
     Ok(())
 }
@@ -160,7 +193,6 @@ fn change_wallpaper_sonoma_plus(new_path: &str) -> Result<(), String> {
         Err(e) => Err(e.to_string())
     }
 }
-
 
 fn change_wallpaper(new_path: &str) -> Result<(), String> {
     let binding = os_info::get();
@@ -248,7 +280,8 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             if ui.button("Change Wallpaper").clicked() {
                 if let Some(path) = rfd::FileDialog::new()
                     //.add_filter("image", &["png", "jpg", "jpeg", "webp", "heic", "heif"])
-                    .pick_file() {
+                    .pick_file()
+                {
                     app.wallpaper_data.new_path = Some(path.display().to_string());
                 }
             }
@@ -264,8 +297,13 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                 if let Some(new_path) = &app.wallpaper_data.new_path {
                     app.wallpaper_data.noselect = false;
                     match change_wallpaper(new_path) {
-                        Ok(_) => { app.wallpaper_data.changerror = None; app.wallpaper_data.reloadneeded = Some(true); },
-                        Err(e) => { app.wallpaper_data.changerror = Some(e.to_string()); }
+                        Ok(_) => {
+                            app.wallpaper_data.changerror = None;
+                            app.wallpaper_data.reloadneeded = Some(true);
+                        }
+                        Err(e) => {
+                            app.wallpaper_data.changerror = Some(e.to_string());
+                        }
                     }
                 } else {
                     app.wallpaper_data.noselect = true;
