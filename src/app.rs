@@ -4,6 +4,7 @@ use eframe::egui;
 use eframe::egui::RichText;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
+use crate::app::menus::sound::SoundData;
 use crate::app::menus::wallpaper::WallpaperData;
 
 #[derive(Display, EnumIter)]
@@ -24,6 +25,7 @@ enum Menu {
 pub struct MyApp {
     selected_menu: Menu,
     wallpaper_data: WallpaperData,
+    sound_data: SoundData,
 }
 
 impl eframe::App for MyApp {

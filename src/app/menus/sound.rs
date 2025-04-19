@@ -8,6 +8,8 @@ use std::process::Command;
 
 #[derive(Default)]
 pub struct SoundData {
+    // The value of the slider
+    slider_value: f32,
 }
 
 
@@ -44,11 +46,11 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
 
             ui.label(format!("The volume is currently: {}%", get_volume()));
 
-            let mut new_volume: f32 = 0.0;
-            ui.add(egui::Slider::new(&mut new_volume, 0.0..=100.0).text("New Volume"));
+
+            ui.add(egui::Slider::new(&mut app.sound_data.slider_value, 0.0..=100.0).text("New Volume"));
 
             if ui.button("Apply").clicked() {
-                set_volume(new_volume as u8)
+                set_volume(app.sound_data.slider_value as u8)
             }
         });
     });
