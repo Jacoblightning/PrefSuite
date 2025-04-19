@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+eframe = "0.31.1"
+rfd = "0.15.3"
+rusqlite = { version = "0.34.0", features = ["bundled"] }
+
+strum = "0.27.1"
+strum_macros = "0.27.1"
