@@ -128,7 +128,11 @@ fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
     let mut networks = HashSet::new();
 
     for network in scan_result {
-        match network.ssid() {
+        let ssid_wrapped;
+        unsafe {
+            ssid_wrapped = network.ssid();
+        }
+        match ssid_wrapped {
             Some(ssid) => {
                 networks.insert(ssid.to_string());
             }
