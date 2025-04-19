@@ -1,6 +1,5 @@
 use crate::app::{Menu, MyApp};
 use std::path::PathBuf;
-use std::thread::spawn;
 use rusqlite::Connection;
 
 use eframe::egui;
@@ -198,7 +197,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             app.selected_menu = Menu::Main;
         }
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-            ui.label(RichText::new("Main Menu").size(36.0));
+            ui.label(RichText::new("Wallpaper Menu:").size(36.0));
         });
 
         let wallpaper_path;
