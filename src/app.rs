@@ -1,5 +1,6 @@
 mod menus;
 
+use std::process::Command;
 use eframe::egui;
 use eframe::egui::RichText;
 use strum::IntoEnumIterator;
@@ -19,8 +20,6 @@ enum Menu {
     SIP,
     About
 }
-
-
 #[derive(Default)]
 pub struct MyApp {
     selected_menu: Menu,

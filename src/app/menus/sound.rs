@@ -45,26 +45,30 @@ fn set_volume(volume: u8) {
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     if !app.sound_data.reload_not_needed {
-        app.sound_data.last_volume = get_volume();
+        //app.sound_data.last_volume = get_volume();
         app.sound_data.reload_not_needed = true;
     }
 
     egui::CentralPanel::default().show(ctx, |ui| {
+        let spacing = &ui.style().spacing;
+        let size = [spacing.slider_width, spacing.slider_rail_height];
+
         if ui.button(RichText::new("Back")).clicked() {
             app.selected_menu = Menu::Main;
         }
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label(RichText::new("Sound Menu:").size(36.0));
 
-            ui.horizontal(|ui| {
-                ui.label(format!("The volume is currently: {}%", app.sound_data.last_volume));
-                if ui.button("Reload").clicked() {
-                    app.sound_data.reload_not_needed = false;
-                }
-            });
+            ui.label(format!("The volume is currently: {}%", app.sound_data.last_volume));
+            if ui.button("Reload").clicked() {
+                app.sound_data.reload_not_needed = false;
+            }
 
 
-            ui.add(egui::Slider::new(&mut app.sound_data.slider_value, 0.0..=100.0).text("New Volume"));
+            ui.add_sized(
+                size,
+                egui::Slider::new(&mut app.sound_data.slider_value, 0.0..=100.0).text("New Volume")
+            );
 
             if ui.button("Apply").clicked() {
                 set_volume(app.sound_data.slider_value as u8);
