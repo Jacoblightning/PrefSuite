@@ -90,9 +90,10 @@ fn get_wifi_name() -> String {
 
 #[cfg(target_os = "macos")]
 fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
+    let interface_wrapped;
     unsafe {
         let wifi_client = objc2_core_wlan::CWWiFiClient::new();
-        let interface_wrapped = wifi_client.interface();
+        interface_wrapped = wifi_client.interface();
     }
 
     let interface;
@@ -106,8 +107,9 @@ fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
         }
     }
 
+    let scan_result_wrapped;
     unsafe {
-        let scan_result_wrapped = interface.scanForNetworksWithSSID_error(None);
+        scan_result_wrapped = interface.scanForNetworksWithSSID_error(None);
     }
 
 
