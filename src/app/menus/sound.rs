@@ -38,6 +38,8 @@ fn set_volume(volume: u8) {
         .arg("-e")
         .arg(format!("set volume output volume {volume}"))
         .spawn()
+        .unwrap()
+        .wait()
         .unwrap();
 }
 
