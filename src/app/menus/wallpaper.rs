@@ -1,6 +1,6 @@
 use crate::app::{Menu, MyApp};
 use std::path::PathBuf;
-
+use std::thread::spawn;
 use rusqlite::Connection;
 
 use eframe::egui;
@@ -30,6 +30,8 @@ fn kill_dock(){
     }
 }
 
+
+// TODO: This
 fn get_current_wallpaper_pre_mavericks() -> Result<String, String> {Ok("".into())}
 
 fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
@@ -84,7 +86,7 @@ fn get_current_wallpaper_sonoma_plus() -> Result<String, String> {
     if osascript.is_err() {
         return Err(osascript.unwrap_err().to_string());
     }
-    Ok(String::from_utf8(osascript.unwrap().stdout).unwrap())
+    Ok(String::from_utf8(osascript.unwrap().stdout).unwrap().strip_suffix('\n').unwrap().to_string())
 }
 
 // TODO: Modify the plist file
@@ -130,8 +132,17 @@ fn change_wallpaper_mavericks_to_sonoma(new_path: &str) -> Result<(), String> {
     Ok(())
 }
 
-// TODO: Use applescript
-fn change_wallpaper_sonoma_plus(new_path: &str) -> Result<(), String> {Ok(())}
+fn change_wallpaper_sonoma_plus(new_path: &str) -> Result<(), String> {
+    match std::process::Command::new("osascript")
+        .arg("-e")
+        .arg(format!("tell application \"System Events\" to tell every desktop to set picture to \"{new_path}\" as POSIX file"))
+        .spawn()
+        .unwrap()
+        .wait() {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string())
+    }
+}
 
 
 fn change_wallpaper(new_path: &str) -> Result<(), String> {
@@ -219,7 +230,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         if !app.wallpaper_data.dberror {
             if ui.button("Change Wallpaper").clicked() {
                 if let Some(path) = rfd::FileDialog::new()
-                    .add_filter("image", &["png", "jpg", "jpeg", "webp"])
+                    //.add_filter("image", &["png", "jpg", "jpeg", "webp", "heic", "heif"])
                     .pick_file() {
                     app.wallpaper_data.new_path = Some(path.display().to_string());
                 }
