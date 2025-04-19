@@ -21,6 +21,14 @@ pub struct WallpaperData {
     wpaper: Option<Result<String, String>>,
 }
 
+fn kill_dock(){
+    let s = sysinfo::System::new_all();
+
+    for (_, process) in s.processes() {
+        println!("pid, name: {}, {}", process.pid(), process.name().to_str().unwrap());
+    }
+}
+
 fn get_current_wallpaper() -> Result<String, String> {
     let homedir = std::env::var("HOME");
     if homedir.is_err() {
@@ -48,7 +56,7 @@ fn get_current_wallpaper() -> Result<String, String> {
     Ok(value)
 }
 
-// Modify the plist file
+// TODO: Modify the plist file
 fn change_wallpaper_pre_mavericks(new_path: &str) -> Result<(), String> {Ok(())}
 
 /// This is only possible thanks to the amazing reverse engineering work done over here. Give them a star.
@@ -98,7 +106,19 @@ fn change_wallpaper_sonoma_plus(new_path: &str) -> Result<(), String> {Ok(())}
 fn change_wallpaper(new_path: &str) -> Result<(), String> {
     let binding = os_info::get();
     let version = binding.version();
-    Err(version.to_string())
+
+    let sonoma = os_info::Version::Semantic(14, 0, 0);
+    let mavericks = os_info::Version::Semantic(10, 9, 0);
+
+    let res = if version >= &sonoma {
+        change_wallpaper_sonoma_plus(new_path)
+    } else if version >= &mavericks {
+        change_wallpaper_mavericks_to_sonoma(new_path)
+    } else {
+        change_wallpaper_pre_mavericks(new_path)
+    };
+    kill_dock();
+    res
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
