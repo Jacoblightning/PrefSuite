@@ -6,14 +6,13 @@ use strum_macros::{Display, EnumIter};
 use crate::app::menus::wallpaper::WallpaperData;
 
 #[derive(Display, EnumIter)]
+#[derive(Default)]
 enum Menu {
+    #[default]
     Main,
     Wallpaper
 }
 
-impl Default for Menu {
-    fn default() -> Self { Menu::Main }
-}
 
 #[derive(Default)]
 pub struct MyApp {

@@ -23,14 +23,14 @@ pub struct WallpaperData {
 fn kill_dock(){
     let s = sysinfo::System::new_all();
 
-    for (_, process) in s.processes() {
+    for process in s.processes().values() {
         if process.name() == "Dock" {
             process.kill();
         }
     }
 }
 
-fn get_current_wallpaper_pre_mavericks() -> Result<String, String> {Ok(("".into()))}
+fn get_current_wallpaper_pre_mavericks() -> Result<String, String> {Ok("".into())}
 
 fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
     let homedir = std::env::var("HOME");
@@ -68,12 +68,10 @@ fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
         Ok(values[1].clone())
     } else if values.len() == 2 {
         Ok(values[0].clone())
+    } else if values[0] == "3" {
+        Ok("Default Wallpaper".to_string())
     } else {
-        if values[0] == "3" {
-            Ok("Default Wallpaper".to_string())
-        } else {
-            Ok(values[0].clone())
-        }
+        Ok(values[0].clone())
     }
 }
 
