@@ -11,7 +11,7 @@ fn get_wifi_name() -> String {
     let binding = os_info::get();
     let os_version = binding.version();
 
-    if true || os_version < &os_info::Version::Semantic(15, 0, 0) {
+    if false && os_version < &os_info::Version::Semantic(15, 0, 0) {
         let network = String::from_utf8(Command::new("networksetup")
             .arg("-getairportnetwork")
             .arg("en0")

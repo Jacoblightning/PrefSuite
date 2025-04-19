@@ -45,7 +45,7 @@ fn set_volume(volume: u8) {
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     if !app.sound_data.reload_not_needed {
-        //app.sound_data.last_volume = get_volume();
+        app.sound_data.last_volume = get_volume();
         app.sound_data.reload_not_needed = true;
     }
 
