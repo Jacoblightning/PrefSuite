@@ -2,6 +2,7 @@ mod app;
 
 use app::MyApp;
 use eframe::egui;
+use egui_extras::install_image_loaders;
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
@@ -12,8 +13,22 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "PrefSuite",
         options,
-        Box::new(|_cc| Ok(Box::<MyApp>::default())),
-        //Box::new(|_cc| Ok(if cfg!(target_os = "macos") {Box::<MyApp>::default()} else {Box::<MacosOnly>::default()})),
+        ///*
+        Box::new(|cc| {
+            // Image support
+            install_image_loaders(&cc.egui_ctx);
+
+            Ok(Box::<MyApp>::default())
+        })
+         //*/
+        /*
+        Box::new(|cc| {
+            // Image Support
+            install_image_loaders(&cc.egui_ctx);
+
+            Ok(if cfg!(target_os = "macos") {Box::<MyApp>::default()} else {Box::<MacosOnly>::default()})
+        })
+         */
     )
 }
 

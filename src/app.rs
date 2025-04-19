@@ -3,6 +3,7 @@ mod menus;
 use eframe::egui;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
+use crate::app::menus::wallpaper::WallpaperData;
 
 #[derive(Display, EnumIter)]
 enum Menu {
@@ -17,6 +18,7 @@ impl Default for Menu {
 #[derive(Default)]
 pub struct MyApp {
     selected_menu: Menu,
+    wallpaper_data: WallpaperData,
 }
 
 impl eframe::App for MyApp {
