@@ -1,13 +1,10 @@
-use std::io::stdout;
+use crate::app::{Menu, MyApp};
 use std::path::PathBuf;
-use std::thread::spawn;
-use crate::app::{MyApp, Menu};
 
-use rusqlite::{params, Connection};
+use rusqlite::Connection;
 
 use eframe::egui;
 use eframe::egui::RichText;
-use rusqlite::fallible_iterator::FallibleIterator;
 
 #[derive(Default)]
 pub struct WallpaperData {
@@ -55,7 +52,7 @@ fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
 
     let conn = conn.unwrap();
 
-    let mut stmt = conn.prepare("SELECT value from data ORDER BY rowid DESC").unwrap();
+    let mut stmt = conn.prepare("SELECT cast(value as text) from data ORDER BY rowid DESC").unwrap();
 
     let iter = stmt.query_map([], |row| {
         row.get(0)
