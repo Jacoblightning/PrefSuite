@@ -88,16 +88,71 @@ fn get_wifi_name() -> String {
     }
 }
 
+#[cfg(target_os = "macos")]
+unsafe fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
+    let wifi_client = objc2_core_wlan::CWWiFiClient::new();
+    let interface_wrapped = wifi_client.interface();
+
+    let interface;
+
+    match interface_wrapped {
+        Some(interface_) => {
+            interface = interface_;
+        }
+        None => {
+            return Err("No interface found".into());
+        }
+    }
+
+    let scan_result_wrapped = interface.scanForNetworksWithSSID_error(None);
+
+
+    let scan_result;
+    match scan_result_wrapped {
+        Ok(scan_result_) => {
+            scan_result = scan_result_;
+        }
+        Err(e) => {
+            return Err(format!("Scan error: {}", e.to_string()));
+        }
+    }
+
+    println!("Got {} networks from scan", scan_result.len());
+
+    let mut networks = HashSet::new();
+
+    for network in scan_result {
+        match network.ssid() {
+            Some(ssid) => {
+                networks.insert(ssid.to_string());
+            }
+            None => {
+                return Err("Error getting network SSID".to_string());
+            }
+        }
+    }
+
+    Ok(networks)
+}
+#[cfg(not(target_os = "macos"))]
+fn get_available_networks_ffi() -> Result<HashSet<String>, String> {panic!("This should never be run!");}
+
 fn get_available_networks() -> Result<HashSet<String>, String> {
     let airport = PathBuf::from(
         "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
     );
 
     if !airport.exists() {
-        return Err(
-            "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
-                .into(),
-        );
+        return if cfg!(target_os = "macos") {
+            unsafe {
+                get_available_networks_ffi()
+            }
+        } else {
+            Err(
+                "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
+                    .into(),
+            )
+        }
     }
 
     let comm = String::from_utf8(Command::new(airport).arg("-s").output().unwrap().stdout).unwrap();
@@ -106,18 +161,29 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
     //        .map(|s| s.split("                   ").next().unwrap_or_default().to_owned()).collect();
     let header = raw_networks.next().unwrap();
 
-    let netend = header.find("BSSID").unwrap();
+    if let Some(netend) = header.find("BSSID") {
+        let mut networks: HashSet<String> = HashSet::new();
 
-    let mut networks: HashSet<String> = HashSet::new();
+        for network in raw_networks {
+            if network.len() > netend {
+                let realname = &network[..netend];
+                networks.insert(realname.trim().into());
+            }
+        }
 
-    for network in raw_networks {
-        if network.len() > netend {
-            let realname = &network[..netend];
-            networks.insert(realname.trim().into());
+        Ok(networks)
+    } else {
+        if cfg!(target_os = "macos") {
+            unsafe {
+                get_available_networks_ffi()
+            }
+        } else {
+            Err(
+                "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
+                    .into(),
+            )
         }
     }
-
-    Ok(networks)
 }
 
 fn join_network(ssid: &str, network_password: &str) {

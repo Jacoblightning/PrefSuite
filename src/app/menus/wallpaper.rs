@@ -109,11 +109,12 @@ fn get_current_wallpaper_sonoma_plus() -> Result<String, String> {
     if let Err(osaerr) = osascript {
         return Err(osaerr.to_string());
     }
-    Ok(String::from_utf8(osascript.unwrap().stdout)
-        .unwrap()
-        .strip_suffix('\n')
-        .unwrap()
-        .to_string())
+    let t1 = String::from_utf8(osascript.unwrap().stdout).unwrap();
+
+    match t1.strip_suffix('\n') {
+        Some(s) => Ok(s.to_string()),
+        None => Ok(t1),
+    }
 }
 
 // TODO: Modify the plist file
