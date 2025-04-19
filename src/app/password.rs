@@ -19,7 +19,10 @@ pub fn password_ui(ui: &mut egui::Ui, password: &mut String) -> egui::Response {
     // Process ui, change a local copy of the state
     // We want TextEdit to fill entire space, and have button after that, so in that case we can
     // change direction to right_to_left.
-    let result = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+    let result = ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+        // Show the password field:
+        ui.add(egui::TextEdit::singleline(password).password(!show_plaintext));
+
         // Toggle the `show_plaintext` bool with a button:
         let response = ui
             .add(egui::SelectableLabel::new(show_plaintext, "👁"))
@@ -27,10 +30,7 @@ pub fn password_ui(ui: &mut egui::Ui, password: &mut String) -> egui::Response {
 
         if response.clicked() {
             show_plaintext = !show_plaintext;
-        }
-
-        // Show the password field:
-        ui.add(egui::TextEdit::singleline(password).password(!show_plaintext));
+        };
     });
 
     // Store the (possibly changed) state:
