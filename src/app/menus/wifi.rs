@@ -120,6 +120,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         match app.wifi_data.network_cache.as_ref().unwrap() {
             Ok(networks) => {
                 egui::ComboBox::from_label("Available Networks")
+                    .selected_text(format!("{}", app.wifi_data.selected_network))
                     .show_ui(ui, |ui| {
                         for network in networks {
                             if ui.selectable_label(&app.wifi_data.selected_network == network, network).clicked() {
