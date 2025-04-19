@@ -14,6 +14,11 @@ pub struct WallpaperData {
     noselect: bool,
     // If there was a database error
     dberror: bool,
+    // If there was an error changing the wallpaper
+    changerror: Option<String>,
+    // Whether wallpaper data is out of date
+    reloadneeded: Option<bool>,
+    wpaper: Option<Result<String, String>>,
 }
 
 fn get_current_wallpaper() -> Result<String, String> {
@@ -97,7 +102,18 @@ fn change_wallpaper(new_path: &str) -> Result<(), String> {
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
-    let current_wallpaper = get_current_wallpaper();
+    if app.wallpaper_data.reloadneeded.is_none() {
+        app.wallpaper_data.reloadneeded = Some(true);
+    }
+
+    let current_wallpaper = if app.wallpaper_data.reloadneeded.unwrap() {
+        app.wallpaper_data.reloadneeded = Some(false);
+        let w = get_current_wallpaper();
+        app.wallpaper_data.wpaper = Some(w.clone());
+        w
+    } else {
+        app.wallpaper_data.wpaper.clone().unwrap()
+    };
 
     egui::CentralPanel::default().show(ctx, |ui| {
         if ui.button(RichText::new("Back")).clicked() {
@@ -151,10 +167,8 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                 if let Some(new_path) = &app.wallpaper_data.new_path {
                     app.wallpaper_data.noselect = false;
                     match change_wallpaper(new_path) {
-                        Ok(_) => {}
-                        Err(e) => {
-                            ui.label(RichText::new(format!("Failed to set Wallpaper: {e}")).size(20.0));
-                        }
+                        Ok(_) => { app.wallpaper_data.changerror = None; app.wallpaper_data.reloadneeded = Some(true); },
+                        Err(e) => { app.wallpaper_data.changerror = Some(e.to_string()); }
                     }
                 } else {
                     app.wallpaper_data.noselect = true;
@@ -163,6 +177,10 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
 
             if app.wallpaper_data.noselect {
                 ui.label("You have to select an image.");
+            }
+
+            if let Some(error) = app.wallpaper_data.changerror.clone() {
+                ui.label(RichText::new(format!("Failed to set Wallpaper: {error}")).size(20.0));
             }
         }
     });
