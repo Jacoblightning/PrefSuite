@@ -1,7 +1,9 @@
+use std::io::stdout;
 use std::path::PathBuf;
+use std::thread::spawn;
 use crate::app::{MyApp, Menu};
 
-use rusqlite::{Connection};
+use rusqlite::{params, Connection};
 
 use eframe::egui;
 use eframe::egui::RichText;
@@ -25,11 +27,15 @@ fn kill_dock(){
     let s = sysinfo::System::new_all();
 
     for (_, process) in s.processes() {
-        println!("pid, name: {}, {}", process.pid(), process.name().to_str().unwrap());
+        if process.name() == "Dock" {
+            process.kill();
+        }
     }
 }
 
-fn get_current_wallpaper() -> Result<String, String> {
+fn get_current_wallpaper_pre_mavericks() -> Result<String, String> {Ok(("".into()))}
+
+fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
     let homedir = std::env::var("HOME");
     if homedir.is_err() {
         return Err(String::from("HOME not set"));
@@ -49,11 +55,41 @@ fn get_current_wallpaper() -> Result<String, String> {
 
     let conn = conn.unwrap();
 
-    let mut stmt = conn.prepare("SELECT value from data WHERE ROWID=2").unwrap();
+    let mut stmt = conn.prepare("SELECT value from data ORDER BY rowid DESC").unwrap();
 
-    let value = stmt.query_row([], |row| row.get(0)).unwrap();
+    let iter = stmt.query_map([], |row| {
+        row.get(0)
+    }).unwrap();
 
-    Ok(value)
+    let mut values: Vec<String> = Vec::new();
+
+    for value in iter {
+        values.push(value.unwrap());
+    }
+
+    if values.len() == 3 {
+        Ok(values[1].clone())
+    } else if values.len() == 2 {
+        Ok(values[0].clone())
+    } else {
+        if values[0] == "3" {
+            Ok("Default Wallpaper".to_string())
+        } else {
+            Ok(values[0].clone())
+        }
+    }
+}
+
+fn get_current_wallpaper_sonoma_plus() -> Result<String, String> {
+    let osascript = std::process::Command::new("osascript")
+        .arg("-e")
+        .arg("tell app \"finder\" to get posix path of (get desktop picture as alias)")
+        .output();
+
+    if osascript.is_err() {
+        return Err(osascript.unwrap_err().to_string());
+    }
+    Ok(String::from_utf8(osascript.unwrap().stdout).unwrap())
 }
 
 // TODO: Modify the plist file
@@ -119,6 +155,22 @@ fn change_wallpaper(new_path: &str) -> Result<(), String> {
     };
     kill_dock();
     res
+}
+
+fn get_current_wallpaper() -> Result<String, String> {
+    let binding = os_info::get();
+    let version = binding.version();
+
+    let sonoma = os_info::Version::Semantic(14, 0, 0);
+    let mavericks = os_info::Version::Semantic(10, 9, 0);
+
+    if version >= &sonoma {
+        get_current_wallpaper_sonoma_plus()
+    } else if version >= &mavericks {
+        get_current_wallpaper_mavericks_to_sonoma()
+    } else {
+        get_current_wallpaper_pre_mavericks()
+    }
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
