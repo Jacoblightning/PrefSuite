@@ -1,12 +1,14 @@
 mod menus;
 
-use std::process::Command;
+pub mod password;
+
 use eframe::egui;
 use eframe::egui::RichText;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 use crate::app::menus::sound::SoundData;
 use crate::app::menus::wallpaper::WallpaperData;
+use crate::app::menus::wifi::WifiData;
 
 #[derive(Display, EnumIter)]
 #[derive(Default)]
@@ -25,6 +27,7 @@ pub struct MyApp {
     selected_menu: Menu,
     wallpaper_data: WallpaperData,
     sound_data: SoundData,
+    wifi_data: WifiData,
 }
 
 impl eframe::App for MyApp {

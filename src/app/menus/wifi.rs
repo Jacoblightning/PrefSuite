@@ -1,17 +1,30 @@
+use std::collections::HashSet;
+use std::path::PathBuf;
 use crate::app::{MyApp, Menu};
+use crate::app::password as egui_password;
 
 
 use eframe::egui;
 use eframe::egui::{RichText};
 
 use std::process::Command;
-use rusqlite::fallible_iterator::FallibleIterator;
+
+#[derive(Default)]
+pub struct WifiData {
+    // Currently Selected Network
+    selected_network: String,
+    // Available networks cache
+    network_cache: Option<Result<HashSet<String>, String>>,
+    // Password input progress
+    password: String,
+}
+
 
 fn get_wifi_name() -> String {
     let binding = os_info::get();
     let os_version = binding.version();
 
-    if false && os_version < &os_info::Version::Semantic(15, 0, 0) {
+    if os_version < &os_info::Version::Semantic(15, 0, 0) {
         let network = String::from_utf8(Command::new("networksetup")
             .arg("-getairportnetwork")
             .arg("en0")
@@ -42,14 +55,48 @@ fn get_wifi_name() -> String {
             return "Not connected".into()
         }
 
-        let before = network.find(" SSID").unwrap();
+        let before = network.find(" SSID").unwrap() + 8;
         let after = network.find("Security").unwrap();
 
-        let netconn = network[before..after].to_string();
+        let netconn = network[before..after].to_string().trim().to_string();
 
         netconn
     }
 }
+
+fn get_available_networks() -> Result<HashSet<String>, String> {
+    let airport = PathBuf::from("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport");
+
+    if !airport.exists() {
+        return Err("Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(".into());
+    }
+
+    let comm = String::from_utf8(Command::new(airport)
+        .arg("-s")
+        .output()
+        .unwrap()
+        .stdout)
+        .unwrap();
+
+    let mut networks: HashSet<String> = comm.split("\n")
+        .map(|s| s.split_whitespace().next().unwrap().to_owned()).collect();
+    println!("Removed SSID? {}", networks.remove("SSID"));
+
+    Ok(networks)
+}
+
+fn join_network(ssid: &str, network_password: &str) {
+    Command::new("networksetup")
+        .arg("-setairportnetwork")
+        .arg("en0")
+        .arg(ssid)
+        .arg(network_password)
+        .spawn()
+        .unwrap();
+}
+
+
+// TODO: Use threads so UI keeps responding
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {
@@ -63,5 +110,36 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         ui.label(RichText::new("You are currently connected to:").heading());
         ui.label(get_wifi_name());
         ui.add_space(10.0);
+
+        if app.wifi_data.network_cache.is_none() {
+            // TODO: Consider Just using an Option around a HashSet. (No Result)
+            app.wifi_data.network_cache = Some(get_available_networks())
+        }
+
+        //Dropdown of available networks
+        match app.wifi_data.network_cache.as_ref().unwrap() {
+            Ok(networks) => {
+                egui::ComboBox::from_label("Available Networks")
+                    .show_ui(ui, |ui| {
+                        for network in networks {
+                            if ui.selectable_label(&app.wifi_data.selected_network == network, network).clicked() {
+                                app.wifi_data.selected_network = network.clone();
+                            }
+                        }
+                    });
+
+                if ui.button("Re-Scan").clicked() {
+                    app.wifi_data.network_cache  = None
+                }
+            }
+            Err(e) => {ui.label(RichText::new(format!("Error: {e}")).heading());}
+        }
+
+        if !app.wifi_data.selected_network.is_empty() {
+            ui.add(egui_password::password(&mut app.wifi_data.password));
+            if ui.button("Connect").clicked() {
+                join_network(&app.wifi_data.selected_network, &app.wifi_data.password)
+            }
+        }
     });
 }
