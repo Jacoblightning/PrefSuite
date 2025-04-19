@@ -8,6 +8,7 @@ use eframe::egui;
 use eframe::egui::{RichText};
 
 use std::process::Command;
+use std::str::Split;
 
 #[derive(Default)]
 pub struct WifiData {
@@ -78,9 +79,18 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
         .stdout)
         .unwrap();
 
-    let mut networks: HashSet<String> = comm.split("\n")
-        .map(|s| s.split_whitespace().next().unwrap_or_default().to_owned()).collect();
-    println!("Removed SSID? {}", networks.remove("SSID"));
+    let mut raw_networks: Split<&str> = comm.split("\n");
+//        .map(|s| s.split("                   ").next().unwrap_or_default().to_owned()).collect();
+    let header = raw_networks.next().unwrap();
+
+    let netend = header.find("BSSID").unwrap();
+
+    let mut networks: HashSet<String> = HashSet::new();
+
+    while let Some(network) = raw_networks.next() {
+        let realname = &network[..netend];
+        networks.insert(realname.trim().into());
+    }
 
     Ok(networks)
 }
@@ -137,6 +147,8 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         }
 
         if !app.wifi_data.selected_network.is_empty() {
+            ui.add_space(10.0);
+
             ui.add(egui_password::password(&mut app.wifi_data.password));
             if ui.button("Connect").clicked() {
                 join_network(&app.wifi_data.selected_network, &app.wifi_data.password)
