@@ -208,7 +208,9 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         if !wallpaper_path.is_empty() && !app.wallpaper_data.dberror {
             let wallpaper_path = PathBuf::from(wallpaper_path);
             if wallpaper_path.exists() {
-                ui.image(String::from("file://") + wallpaper_path.to_str().unwrap());
+                ui.collapsing("Wallpaper:", |ui| {
+                    ui.image(String::from("file://") + wallpaper_path.to_str().unwrap());
+                });
             } else {
                 ui.label(RichText::new("Wallpaper does not exist.").size(20.0));
             }
