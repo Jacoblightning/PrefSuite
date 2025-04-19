@@ -10,9 +10,14 @@ use std::process::Command;
 pub struct SoundData {
     // The value of the slider
     slider_value: f32,
+    // If the value is not out of date (because bool defaults to false)
+    reload_not_needed: bool,
+    // The save volume
+    last_volume: u8,
 }
 
 
+/// VERY expensive function. Do NOT call unless required
 fn get_volume() -> u8 {
     String::from_utf8(Command::new("osascript")
         .arg("-e")
@@ -27,6 +32,7 @@ fn get_volume() -> u8 {
         .unwrap()
 }
 
+/// VERY expensive function. Do NOT call unless required
 fn set_volume(volume: u8) {
     Command::new("osascript")
         .arg("-e")
@@ -36,6 +42,11 @@ fn set_volume(volume: u8) {
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
+    if !app.sound_data.reload_not_needed {
+        app.sound_data.last_volume = get_volume();
+        app.sound_data.reload_not_needed = true;
+    }
+
     egui::CentralPanel::default().show(ctx, |ui| {
         if ui.button(RichText::new("Back")).clicked() {
             app.selected_menu = Menu::Main;
@@ -43,14 +54,19 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label(RichText::new("Sound Menu:").size(36.0));
 
-
-            ui.label(format!("The volume is currently: {}%", get_volume()));
+            ui.horizontal(|ui| {
+                ui.label(format!("The volume is currently: {}%", app.sound_data.last_volume));
+                if ui.button("Reload").clicked() {
+                    app.sound_data.reload_not_needed = false;
+                }
+            });
 
 
             ui.add(egui::Slider::new(&mut app.sound_data.slider_value, 0.0..=100.0).text("New Volume"));
 
             if ui.button("Apply").clicked() {
-                set_volume(app.sound_data.slider_value as u8)
+                set_volume(app.sound_data.slider_value as u8);
+                app.sound_data.reload_not_needed = false;
             }
         });
     });
