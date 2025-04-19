@@ -19,6 +19,7 @@ fn get_volume() -> u8 {
         .unwrap()
         .stdout)
         .unwrap()
+        .strip_suffix("\n")
         .parse::<u8>()
         .unwrap()
 }
