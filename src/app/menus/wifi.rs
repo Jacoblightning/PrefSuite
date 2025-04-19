@@ -88,8 +88,10 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
     let mut networks: HashSet<String> = HashSet::new();
 
     while let Some(network) = raw_networks.next() {
-        let realname = &network[..netend];
-        networks.insert(realname.trim().into());
+        if network.len() > netend {
+            let realname = &network[..netend];
+            networks.insert(realname.trim().into());
+        }
     }
 
     Ok(networks)
