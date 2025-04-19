@@ -79,7 +79,7 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
         .unwrap();
 
     let mut networks: HashSet<String> = comm.split("\n")
-        .map(|s| s.split_whitespace().next().unwrap().to_owned()).collect();
+        .map(|s| s.split_whitespace().next().unwrap_or_default().to_owned()).collect();
     println!("Removed SSID? {}", networks.remove("SSID"));
 
     Ok(networks)
