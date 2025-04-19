@@ -89,9 +89,11 @@ fn get_wifi_name() -> String {
 }
 
 #[cfg(target_os = "macos")]
-unsafe fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
-    let wifi_client = objc2_core_wlan::CWWiFiClient::new();
-    let interface_wrapped = wifi_client.interface();
+fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
+    unsafe {
+        let wifi_client = objc2_core_wlan::CWWiFiClient::new();
+        let interface_wrapped = wifi_client.interface();
+    }
 
     let interface;
 
@@ -104,7 +106,9 @@ unsafe fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
         }
     }
 
-    let scan_result_wrapped = interface.scanForNetworksWithSSID_error(None);
+    unsafe {
+        let scan_result_wrapped = interface.scanForNetworksWithSSID_error(None);
+    }
 
 
     let scan_result;
@@ -144,9 +148,7 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
 
     if !airport.exists() {
         return if cfg!(target_os = "macos") {
-            unsafe {
-                get_available_networks_ffi()
-            }
+            get_available_networks_ffi()
         } else {
             Err(
                 "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
@@ -172,17 +174,13 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
         }
 
         Ok(networks)
+    } else if cfg!(target_os = "macos") {
+        get_available_networks_ffi()
     } else {
-        if cfg!(target_os = "macos") {
-            unsafe {
-                get_available_networks_ffi()
-            }
-        } else {
-            Err(
-                "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
-                    .into(),
-            )
-        }
+        Err(
+            "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
+                .into(),
+        )
     }
 }
 
