@@ -4,8 +4,6 @@ use app::MyApp;
 use eframe::egui;
 
 fn main() -> eframe::Result {
-    println!("Hello, world!");
-
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default(),
         ..Default::default()

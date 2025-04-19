@@ -7,7 +7,13 @@ use eframe::egui;
 use eframe::egui::RichText;
 
 fn get_current_wallpaper() -> Result<String, String> {
-    let db = PathBuf::from("~/Library/Application Support/Dock/desktoppicture.db");
+    let homedir = std::env::var("HOME");
+    if homedir.is_err() {
+        return Err(String::from("HOME not set"));
+    }
+    let homedir = homedir.unwrap();
+
+    let db: PathBuf = [&homedir, "Library/Application Support/Dock/desktoppicture.db"].iter().collect();
     if !db.exists() {
         return Err(String::from("Database file not found :("))
     }
@@ -29,8 +35,6 @@ fn get_current_wallpaper() -> Result<String, String> {
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     let current_wallpaper = get_current_wallpaper();
-
-
 
     egui::CentralPanel::default().show(ctx, |ui| {
         if ui.button(RichText::new("Back")).clicked() {
