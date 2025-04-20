@@ -68,5 +68,11 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label(RichText::new("Bluetooth Menu:").size(36.0));
         });
+
+        if ui.button("Scan").clicked(){
+            for item in get_nearby_bluetooth().unwrap() {
+                ui.label(item);
+            }
+        }
     });
 }
