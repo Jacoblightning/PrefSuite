@@ -17,7 +17,7 @@
 */
 
 use crate::app::password as egui_password;
-use crate::command_output;
+use crate::{command_output, run_command};
 use crate::app::{Menu, MyApp};
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -49,6 +49,13 @@ fn is_wifi_on() -> Result<bool, String> {
         Ok(false)
     } else {
         Err(format!("d{}", "part.to_string()"))
+    }
+}
+
+fn set_wifi(on: bool) -> Result<(), String> {
+    match run_command!("networksetup", "-setairportpower", "Wi-Fi", if on { "On" } else { "Off" }).wait() {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string())
     }
 }
 
@@ -199,11 +206,42 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             ui.label(RichText::new("Wi-Fi Menu:").size(36.0));
         });
 
+
         let mut connected = false;
-        ui.label(RichText::new(format!("Wi-Fi is {}", match is_wifi_on() {
-            Ok(o) => if o { connected = true; "On".to_string() } else { "Off".to_string() },
-            Err(e) => format!("Unknown\nError: {}", e.to_string())
-        })).size(24.0));
+        ui.horizontal(|ui| {
+            let errored: bool;
+            ui.label(RichText::new(format!("Wi-Fi is {}", match is_wifi_on() {
+                Ok(o) => {
+                    errored = false;
+                    if o {
+                        connected = true;
+                        "On".to_string()
+                    } else {
+                        "Off".to_string()
+                    }
+                },
+                Err(e) => {
+                    errored = true;
+                    format!("Unknown\nError: {}", e.to_string())
+                }
+            })).size(24.0));
+
+            if !errored {
+                if ui.button(RichText::new(format!("Turn {}", if connected {"Off"} else {"On"}))).clicked() {
+                    match set_wifi(!connected) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            rfd::MessageDialog::new()
+                                .set_title(format!("Error turning Wi-Fi {}", if connected {"Off"} else {"On"}))
+                                .set_description(format!("There was an error turning Wi-Fi {}:\n{}", if connected {"Off"} else {"On"}, e.to_string()))
+                                .set_buttons(rfd::MessageButtons::Ok)
+                                .set_level(rfd::MessageLevel::Error)
+                                .show();
+                        }
+                    }
+                }
+            }
+        });
 
         if connected {
             ui.label(RichText::new("You are currently connected to:").heading());
@@ -255,6 +293,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                                 .set_title("Error Connecting to Network")
                                 .set_description(format!("There was an error connecting to {}:\n{}", app.wifi_data.selected_network, e))
                                 .set_buttons(rfd::MessageButtons::Ok)
+                                .set_level(rfd::MessageLevel::Error)
                                 .show();
                         }
                     }

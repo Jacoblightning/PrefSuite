@@ -22,3 +22,22 @@ macro_rules! command_output {
         }
     };
 }
+
+/// Macro for spawning a command
+/// To be used inside a function returning Result<?, String>
+#[macro_export]
+macro_rules! run_command {
+    ( $n:expr, $( $x:expr ),* ) => {
+        {
+            let mut comm = std::process::Command::new($n);
+            $(
+            comm.arg($x);
+            )*
+            match comm.spawn() {
+                Ok(o) => o,
+                Err(e) => return Err(e.to_string())
+            }
+        }
+    };
+}
+
