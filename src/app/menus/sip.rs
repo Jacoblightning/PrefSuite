@@ -20,6 +20,40 @@ use crate::app::{Menu, MyApp};
 
 use eframe::egui;
 use eframe::egui::RichText;
+use log::{debug, error, info, trace};
+
+#[cfg(target_os = "macos")]
+fn get_sip() -> Result<u32, String> {
+
+    info!("Loading /usr/lib/libSystem.dylib");
+
+    let lib = match unsafe {libloading::Library::new("/usr/lib/libSystem.dylib")} {
+        Ok(lib) => lib,
+        Err(e) => {
+            error!("Failed to load libSystem.dylib: {}", e);
+            return Err(e.to_string())
+        },
+    };
+    trace!("Successfully loaded /usr/lib/libSystem.dylib");
+    debug!("Loading function csr_get_active_config");
+
+    let func: libloading::Symbol<unsafe extern fn() -> u32> = match unsafe { lib.get(b"sip_active_config") } {
+        Ok(func) => func,
+        Err(e) => {
+            error!("Failed to load function csr_get_active_config: {}", e);
+            return Err(e.to_string())
+        }
+    };
+
+    trace!("Successfully loaded /usr/lib/libSystem.dylib");
+
+    debug!("Calling sip_active_config function");
+    let sip_bits = unsafe {func()};
+    trace!("Successfully called sip_active_config function");
+    info!("sip bits: {}", sip_bits);
+
+    Ok(sip_bits)
+}
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {
@@ -29,5 +63,12 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label(RichText::new("System Integrity Protection Menu:").size(36.0));
         });
+
+        if ui.button("Call function").clicked(){
+            ui.label(match get_sip() {
+                Ok(sip) => {sip.to_string()}
+                Err(e) => e
+            });
+        }
     });
 }

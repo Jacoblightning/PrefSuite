@@ -21,11 +21,15 @@ use crate::app::{Menu, MyApp};
 use eframe::egui;
 use eframe::egui::RichText;
 
-use log::{debug, error, log_enabled, info, Level};
+use log::{debug, error, log_enabled, info, Level, trace};
 use objc2_io_bluetooth::IOBluetoothDevice;
 
 fn get_nearby_bluetooth() -> Result<HashSet<String>, String>{
+    info!("Scanning for bluetooth devices");
+
     let inquiry = unsafe {objc2_io_bluetooth::IOBluetoothDeviceInquiry::new()};
+
+    trace!("Aquired IOBluetoothDeviceInquiry");
     //inquiry.setInquiryLength()
     //inquiry.setUpdateNewDeviceNames()
     unsafe { inquiry.start(); }
