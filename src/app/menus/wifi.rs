@@ -201,8 +201,8 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
 
         let mut connected = false;
         ui.label(RichText::new(format!("Wi-Fi is {}", match is_wifi_on() {
-            Ok(o) => if o { connected = true; "On" } else { "Off" },
-            Err(e) => &format!("Unknown\nError: {}", e.to_string())
+            Ok(o) => if o { connected = true; "On".to_string() } else { "Off".to_string() },
+            Err(e) => format!("Unknown\nError: {}", e.to_string())
         })).size(24.0));
 
         if connected {
