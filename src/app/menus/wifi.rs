@@ -17,6 +17,7 @@
 */
 
 use crate::app::password as egui_password;
+use crate::command_output;
 use crate::app::{Menu, MyApp};
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -26,7 +27,6 @@ use eframe::egui::RichText;
 
 use std::process::Command;
 use std::str::Split;
-
 #[derive(Default)]
 pub struct WifiData {
     // Currently Selected Network
@@ -37,23 +37,30 @@ pub struct WifiData {
     password: String,
 }
 
-fn get_wifi_name() -> String {
+fn is_wifi_on() -> Result<bool, String> {
+    let comm: String = command_output!("networksetup", "-getairportpower", "en0");
+
+    let part: Vec<&str> = comm.split(':').collect();
+    let part = part[1].trim();
+
+    if part == "On" {
+        Ok(true)
+    } else if part == "Off" {
+        Ok(false)
+    } else {
+        Err(format!("d{}", "part.to_string()"))
+    }
+}
+
+fn get_wifi_name() -> Result<String, String> {
     let binding = os_info::get();
     let os_version = binding.version();
 
     if os_version < &os_info::Version::Semantic(15, 0, 0) {
-        let network = String::from_utf8(
-            Command::new("networksetup")
-                .arg("-getairportnetwork")
-                .arg("en0")
-                .output()
-                .unwrap()
-                .stdout,
-        )
-        .unwrap();
+        let network = command_output!("networksetup", "-getairportnetwork", "en0");
 
         if network == "You are not associated with an AirPort network.\n" {
-            return "Not connected".into();
+            return Ok("Not connected".into());
         }
 
         let network = network
@@ -62,83 +69,60 @@ fn get_wifi_name() -> String {
             .strip_suffix("\n")
             .unwrap();
 
-        network.into()
+        Ok(network.into())
     } else {
         // Sequoia very graciously decided to remove that command in favour of one that can take up to ~100x as long
-        let network = String::from_utf8(
-            Command::new("ipconfig")
-                .arg("getsummary")
-                .arg("en0")
-                .output()
-                .unwrap()
-                .stdout,
-        )
-        .unwrap();
+        let network = command_output!("ipconfig", "getsummary", "en0");
 
         if network.contains("Active : FALSE") {
-            return "Not connected".into();
+            return Ok("Not connected".into());
         }
 
-        let before = network.find(" SSID").unwrap() + 8;
-        let after = network.find("Security").unwrap();
+        if let Some(before) = network.find(" SSID") {
+            if let Some(after) = network.find("Security") {
+                let netconn = network[before+8..after].to_string().trim().to_string();
 
-        let netconn = network[before..after].to_string().trim().to_string();
-
-        netconn
+                Ok(netconn)
+            } else {
+                Err("\"Security\" not in command output".into())
+            }
+        } else {
+            Err("\"SSID\" not in command output".into())
+        }
     }
 }
 
 #[cfg(target_os = "macos")]
 fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
-    let interface_wrapped;
-    unsafe {
-        let wifi_client = objc2_core_wlan::CWWiFiClient::new();
-        interface_wrapped = wifi_client.interface();
-    }
+    let interface_wrapped = unsafe {
+        objc2_core_wlan::CWWiFiClient::new().interface()
+    };
 
-    let interface;
+    let interface = match interface_wrapped {
+        Some(interface_) => interface_,
+        None => return Err("No interface found".into())
+    };
 
-    match interface_wrapped {
-        Some(interface_) => {
-            interface = interface_;
-        }
-        None => {
-            return Err("No interface found".into());
-        }
-    }
-
-    let scan_result_wrapped;
-    unsafe {
-        scan_result_wrapped = interface.scanForNetworksWithSSID_error(None);
-    }
+    let scan_result_wrapped = unsafe {
+        interface.scanForNetworksWithSSID_error(None)
+    };
 
 
-    let scan_result;
-    match scan_result_wrapped {
-        Ok(scan_result_) => {
-            scan_result = scan_result_;
-        }
-        Err(e) => {
-            return Err(format!("Scan error: {}", e.to_string()));
-        }
-    }
+    let scan_result = match scan_result_wrapped {
+        Ok(scan_result_) => scan_result_,
+        Err(e) => return Err(format!("Scan error: {}", e.to_string()))
+    };
 
     println!("Got {} networks from scan", scan_result.len());
 
     let mut networks = HashSet::new();
 
     for network in scan_result {
-        let ssid_wrapped;
-        unsafe {
-            ssid_wrapped = network.ssid();
-        }
-        match ssid_wrapped {
+        match unsafe {network.ssid()} {
             Some(ssid) => {
                 networks.insert(ssid.to_string());
             }
-            None => {
-                return Err("Error getting network SSID".to_string());
-            }
+            None => return Err("Error getting network SSID".to_string())
         }
     }
 
@@ -154,6 +138,7 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
 
     if !airport.exists() {
         return if cfg!(target_os = "macos") {
+            // Try using the ffi interface as a last resort (very temperamental)
             get_available_networks_ffi()
         } else {
             Err(
@@ -181,6 +166,7 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
 
         Ok(networks)
     } else if cfg!(target_os = "macos") {
+        // Try using the ffi interface as a last resort (very temperamental)
         get_available_networks_ffi()
     } else {
         Err(
@@ -190,14 +176,16 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
     }
 }
 
-fn join_network(ssid: &str, network_password: &str) {
-    Command::new("networksetup")
+fn join_network(ssid: &str, network_password: &str) -> Result<(), String> {
+    match Command::new("networksetup")
         .arg("-setairportnetwork")
         .arg("en0")
         .arg(ssid)
         .arg(network_password)
-        .spawn()
-        .unwrap();
+        .spawn() {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string())
+    }
 }
 
 // TODO: Use threads so UI keeps responding
@@ -211,49 +199,66 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             ui.label(RichText::new("Wi-Fi Menu:").size(36.0));
         });
 
-        ui.label(RichText::new("You are currently connected to:").heading());
-        ui.label(get_wifi_name());
-        ui.add_space(10.0);
+        let mut connected = false;
+        ui.label(RichText::new(format!("Wi-Fi is {}", match is_wifi_on() {
+            Ok(o) => if o { connected = true; "On" } else { "Off" },
+            Err(e) => &format!("Unknown\nError: {}", e.to_string())
+        })).size(24.0));
 
-        if app.wifi_data.network_cache.is_none() {
-            // TODO: Consider Just using an Option around a HashSet. (No Result)
-            app.wifi_data.network_cache = Some(get_available_networks())
-        }
-
-        //Dropdown of available networks
-        match app.wifi_data.network_cache.as_ref().unwrap() {
-            Ok(networks) => {
-                egui::ComboBox::from_label("Available Networks")
-                    .selected_text(&app.wifi_data.selected_network)
-                    .show_ui(ui, |ui| {
-                        for network in networks {
-                            if ui
-                                .selectable_label(
-                                    &app.wifi_data.selected_network == network,
-                                    network,
-                                )
-                                .clicked()
-                            {
-                                app.wifi_data.selected_network = network.clone();
-                            }
-                        }
-                    });
-
-                if ui.button("Re-Scan").clicked() {
-                    app.wifi_data.network_cache = None
-                }
-            }
-            Err(e) => {
-                ui.label(RichText::new(format!("Error: {e}")).heading());
-            }
-        }
-
-        if !app.wifi_data.selected_network.is_empty() {
+        if connected {
+            ui.label(RichText::new("You are currently connected to:").heading());
+            ui.label(get_wifi_name().unwrap_or_else(|e| format!("\nError: {}", e.to_string())));
             ui.add_space(10.0);
 
-            ui.add(egui_password::password(&mut app.wifi_data.password));
-            if ui.button("Connect").clicked() {
-                join_network(&app.wifi_data.selected_network, &app.wifi_data.password)
+            if app.wifi_data.network_cache.is_none() {
+                // TODO: Consider Just using an Option around a HashSet. (No Result)
+                app.wifi_data.network_cache = Some(get_available_networks())
+            }
+
+            //Dropdown of available networks
+            match app.wifi_data.network_cache.as_ref().unwrap() {
+                Ok(networks) => {
+                    egui::ComboBox::from_label("Available Networks")
+                        .selected_text(&app.wifi_data.selected_network)
+                        .show_ui(ui, |ui| {
+                            for network in networks {
+                                if ui
+                                    .selectable_label(
+                                        &app.wifi_data.selected_network == network,
+                                        network,
+                                    )
+                                    .clicked()
+                                {
+                                    app.wifi_data.selected_network = network.clone();
+                                }
+                            }
+                        });
+
+                    if ui.button("Re-Scan").clicked() {
+                        app.wifi_data.network_cache = None
+                    }
+                }
+                Err(e) => {
+                    ui.label(RichText::new(format!("Error: {e}")).heading());
+                }
+            }
+
+            if !app.wifi_data.selected_network.is_empty() {
+                ui.add_space(10.0);
+
+                ui.add(egui_password::password(&mut app.wifi_data.password));
+                if ui.button("Connect").clicked() {
+                    match join_network(&app.wifi_data.selected_network, &app.wifi_data.password) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            rfd::MessageDialog::new()
+                                .set_title("Error Connecting to Network")
+                                .set_description(format!("There was an error connecting to {}:\n{}", app.wifi_data.selected_network, e))
+                                .set_buttons(rfd::MessageButtons::Ok)
+                                .show();
+                        }
+                    }
+                }
             }
         }
     });

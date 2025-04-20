@@ -19,6 +19,7 @@
 mod menus;
 
 pub mod password;
+pub mod helpers;
 
 use crate::app::menus::sound::SoundData;
 use crate::app::menus::wallpaper::WallpaperData;

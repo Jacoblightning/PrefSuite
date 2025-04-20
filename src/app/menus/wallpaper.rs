@@ -93,7 +93,7 @@ fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
         Ok(values[1].clone())
     } else if values.len() == 2 {
         Ok(values[0].clone())
-    } else if values[0] == "3" {
+    } else if values.len() == 0 || values[0] == "3" {
         Ok("Default Wallpaper".to_string())
     } else {
         Ok(values[0].clone())
