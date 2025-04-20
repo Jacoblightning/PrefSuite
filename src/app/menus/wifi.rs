@@ -53,7 +53,7 @@ fn is_wifi_on() -> Result<bool, String> {
 }
 
 fn set_wifi(on: bool) -> Result<(), String> {
-    match run_command!("networksetup", "-setairportpower", "Wi-Fi", if on { "On" } else { "Off" }).wait() {
+    match run_command!("networksetup", "-setairportpower", "en0", if on { "On" } else { "Off" }).wait() {
         Ok(_) => Ok(()),
         Err(e) => Err(e.to_string())
     }
@@ -146,7 +146,10 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
     if !airport.exists() {
         return if cfg!(target_os = "macos") {
             // Try using the ffi interface as a last resort (very temperamental)
-            get_available_networks_ffi()
+            match get_available_networks_ffi() {
+                Ok(available_networks) => Ok(available_networks),
+                Err(e) => Err(format!("Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"))
+            }
         } else {
             Err(
                 "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
@@ -158,7 +161,6 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
     let comm = String::from_utf8(Command::new(airport).arg("-s").output().unwrap().stdout).unwrap();
 
     let mut raw_networks: Split<&str> = comm.split("\n");
-    //        .map(|s| s.split("                   ").next().unwrap_or_default().to_owned()).collect();
     let header = raw_networks.next().unwrap();
 
     if let Some(netend) = header.find("BSSID") {
@@ -174,7 +176,10 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
         Ok(networks)
     } else if cfg!(target_os = "macos") {
         // Try using the ffi interface as a last resort (very temperamental)
-        get_available_networks_ffi()
+        match get_available_networks_ffi() {
+            Ok(available_networks) => Ok(available_networks),
+            Err(e) => Err(format!("Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"))
+        }
     } else {
         Err(
             "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("

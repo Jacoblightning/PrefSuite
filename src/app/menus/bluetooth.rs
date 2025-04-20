@@ -15,11 +15,50 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
+use std::collections::HashSet;
 use crate::app::{Menu, MyApp};
 
 use eframe::egui;
 use eframe::egui::RichText;
+
+use log::{debug, error, log_enabled, info, Level};
+use objc2_io_bluetooth::IOBluetoothDevice;
+
+fn get_nearby_bluetooth() -> Result<HashSet<String>, String>{
+    let inquiry = unsafe {objc2_io_bluetooth::IOBluetoothDeviceInquiry::new()};
+    //inquiry.setInquiryLength()
+    //inquiry.setUpdateNewDeviceNames()
+    unsafe { inquiry.start(); }
+
+    // TODO: Temp
+    std::thread::sleep(std::time::Duration::from_secs(11));
+    let devices = match unsafe {inquiry.foundDevices()} {
+        Some(devices) => devices,
+        None => {
+            error!("Error unwrapping found devices!");
+            return Err("Error unwrapping found devices!".into());
+        }
+    };
+
+    info!("Found {} bluetooth devices.", devices.len());
+
+    let mut device_names  = HashSet::new();
+
+    for item in devices {
+        // See https://github.com/madsmtm/objc2/issues/743
+        let device = item.downcast::<IOBluetoothDevice>().unwrap();
+
+        let devname = unsafe {device.name()};
+
+        debug!("Found Bluetooth device: {}", devname);
+
+        let name = devname.to_string();
+
+        device_names.insert(name);
+    }
+
+    Ok(device_names)
+}
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {

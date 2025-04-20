@@ -24,6 +24,8 @@ use egui_extras::install_image_loaders;
 
 #[allow(unused_doc_comments)]
 fn main() -> eframe::Result {
+    env_logger::init();
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default(),
         ..Default::default()
