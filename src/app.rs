@@ -28,6 +28,7 @@ use eframe::egui;
 use eframe::egui::RichText;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
+use crate::app::menus::sip::{SIPData};
 
 #[derive(Display, EnumIter, Default)]
 enum Menu {
@@ -46,6 +47,7 @@ pub struct MyApp {
     wallpaper_data: WallpaperData,
     sound_data: SoundData,
     wifi_data: WifiData,
+    sip_data: SIPData,
 }
 
 impl eframe::App for MyApp {

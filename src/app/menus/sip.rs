@@ -15,12 +15,19 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
+use std::collections::HashSet;
 use crate::app::{Menu, MyApp};
 
 use eframe::egui;
 use eframe::egui::RichText;
 use log::{debug, error, info, trace};
+use os_info::Version;
+
+#[derive(Default)]
+pub struct SIPData {
+    // Sip bits cache
+    bits: Option<u32>,
+}
 
 #[cfg(target_os = "macos")]
 fn get_sip() -> Result<u32, String> {
@@ -66,7 +73,154 @@ fn get_sip() -> Result<u32, String> {
     Err("sip is not supported on this platform".to_owned())
 }
 
+fn is_sip_disabled(bits: u32, version: &Version) -> bool {
+    let sierra = Version::Semantic(10, 12, 0);
+    let high_sierra = Version::Semantic(10, 13, 0);
+    let mojave = Version::Semantic(10, 14, 0);
+    let big_sur = Version::Semantic(11, 0, 0);
+
+    // Checking for all El Capitan bits except allow_apple_internal as that can't be set
+    if !((bits & 239) == 239) {
+        return false;
+    } else if version < &sierra {
+        return true;
+    }
+
+    // Check for any_recovery_os
+    if !(bits & 256) {
+        return false;
+    } else if version < &high_sierra {
+        return true;
+    }
+
+    // check for unapproved_kexts
+    if !(bits & 512) {
+        return false;
+    } else if version < &mojave {
+        return true;
+    }
+
+    // check or allow_executable_policy_override
+    if !(bits & 1024) {
+        return false;
+    } else if version < &big_sur {
+        return true;
+    }
+
+    // check for allow_unauthenticated_root
+    if !(bits & 2048) {
+        false
+    } else {
+        true
+    }
+}
+
+fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
+    let sierra = Version::Semantic(10, 12, 0);
+    let high_sierra = Version::Semantic(10, 13, 0);
+    let mojave = Version::Semantic(10, 14, 0);
+    let big_sur = Version::Semantic(11, 0, 0);
+
+    ui.label(RichText::new(format!(
+        "CSR/SIP is: {}",
+        if bits == 0 {"Fully Enabled"} else if is_sip_disabled(bits, &version) {"Fully Disabled"} else {"Custom:"}
+    )).size(32.0));
+    ui.label(
+        format!(
+            "CSR_ALLOW_UNTRUSTED_KEXTS (Allow unsigned kernel drivers to be installed and loaded): {}",
+            if bits & (1 << 0) {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_UNRESTRICTED_FS (Allows unrestricted filesystem access): {}",
+            if bits & (1 << 1) {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_TASK_FOR_PID (Alows tracking processes based off of a provided process ID): {}",
+            if bits & (1 << 2) {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_KERNEL_DEBUGGER (Allows attacking a low level kernel debugger to the system): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_APPLE_INTERNAL (Allows apple internal feature set (primarily for development devices)): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_UNRESTRICTED_DTRACE (Allows unrestricted dtrace usage): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_UNRESTRICTED_NVRAM (Allows unrestricted NVRAM write): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    ui.label(
+        format!(
+            "CSR_ALLOW_DEVICE_CONFIGURATION (Allows custom device trees (based off of speculation. There is little public info on what this bit does)): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    // Those were all the EL Capitan bits
+    if version < &sierra {
+        return;
+    }
+    ui.label(
+        format!(
+            "CSR_ALLOW_ANY_RECOVERY_OS (Skip BaseSystem Verification, primarily for custom recoveryOS images): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    // Only 1 bit was added in Sierra
+    if version < &high_sierra {
+        return;
+    }
+    ui.label(
+        format!(
+            "CSR_ALLOW_UNAPPROVED_KEXTS (Allows unapproved kernel driver installation/loading): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    // Same for High Sierra
+    if version < &mojave {
+        return;
+    }
+    ui.label(
+        format!(
+            "CSR_ALLOW_EXECUTABLE_POLICY_OVERRIDE (Allows override of executable policy): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+    // Same for Mojave
+    if version < &big_sur {
+        return;
+    }
+    ui.label(
+        format!(
+            "CSR_ALLOW_UNAUTHENTICATED_ROOT (Allows custom APFS snapshots to be booted): {}",
+            if bits & 1 {"Allowed"} else {"Forbidden"}
+        )
+    );
+}
+
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
+    let binding = os_info::get();
+    let version = binding.version();
+
+    let el_capitan = Version::Semantic(10, 11, 0);
+
     egui::CentralPanel::default().show(ctx, |ui| {
         if ui.button(RichText::new("Back")).clicked() {
             app.selected_menu = Menu::Main;
@@ -75,11 +229,24 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             ui.label(RichText::new("System Integrity Protection Menu:").size(36.0));
         });
 
-        if ui.button("Call function").clicked(){
-            ui.label(match get_sip() {
-                Ok(sip) => {sip.to_string()}
-                Err(e) => e
-            });
+        if version < &el_capitan {
+            ui.label("Your system does not have System Integrity Protection");
+            return;
         }
+
+
+        if app.sip_data.bits.is_none() {
+            match get_sip() {
+                Ok(bits) => {app.sip_data.bits = Some(bits);},
+                Err(e) => {
+                    error!("Failed to get SIP: {}", e);
+                }
+            }
+        }
+
+        if let Some(bits) = app.sip_data.bits {
+            show_sip_bits(ui, bits, version);
+        }
+
     });
 }
