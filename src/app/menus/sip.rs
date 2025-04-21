@@ -37,7 +37,7 @@ fn get_sip() -> Result<u32, String> {
     trace!("Successfully loaded /usr/lib/libSystem.dylib");
     debug!("Loading function csr_get_active_config");
 
-    let func: libloading::Symbol<unsafe extern fn(*mut u32) -> i32> = match unsafe { lib.get(b"sip_active_config") } {
+    let func: libloading::Symbol<unsafe extern fn(*mut u32) -> i32> = match unsafe { lib.get(b"csr_get_active_config") } {
         Ok(func) => func,
         Err(e) => {
             error!("Failed to load function csr_get_active_config: {}", e);
@@ -59,6 +59,11 @@ fn get_sip() -> Result<u32, String> {
     info!("sip bits: {}", sip_bits);
 
     Ok(sip_bits)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn get_sip() -> Result<u32, String> {
+    Err("sip is not supported on this platform".to_owned())
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
