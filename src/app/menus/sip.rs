@@ -87,28 +87,28 @@ fn is_sip_disabled(bits: u32, version: &Version) -> bool {
     }
 
     // Check for any_recovery_os
-    if !(bits & 256) {
+    if (bits & 256) == 0 {
         return false;
     } else if version < &high_sierra {
         return true;
     }
 
     // check for unapproved_kexts
-    if !(bits & 512) {
+    if !(bits & 512) == 0 {
         return false;
     } else if version < &mojave {
         return true;
     }
 
     // check or allow_executable_policy_override
-    if !(bits & 1024) {
+    if (bits & 1024)  == 0 {
         return false;
     } else if version < &big_sur {
         return true;
     }
 
     // check for allow_unauthenticated_root
-    if !(bits & 2048) {
+    if (bits & 2048) == 0 {
         false
     } else {
         true
@@ -128,49 +128,49 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     ui.label(
         format!(
             "CSR_ALLOW_UNTRUSTED_KEXTS (Allow unsigned kernel drivers to be installed and loaded): {}",
-            if bits & (1 << 0) {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 0)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_UNRESTRICTED_FS (Allows unrestricted filesystem access): {}",
-            if bits & (1 << 1) {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 1)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_TASK_FOR_PID (Alows tracking processes based off of a provided process ID): {}",
-            if bits & (1 << 2) {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 2)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_KERNEL_DEBUGGER (Allows attacking a low level kernel debugger to the system): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 3)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_APPLE_INTERNAL (Allows apple internal feature set (primarily for development devices)): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 4)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_UNRESTRICTED_DTRACE (Allows unrestricted dtrace usage): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 5)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_UNRESTRICTED_NVRAM (Allows unrestricted NVRAM write): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 6)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     ui.label(
         format!(
             "CSR_ALLOW_DEVICE_CONFIGURATION (Allows custom device trees (based off of speculation. There is little public info on what this bit does)): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 7)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     // Those were all the EL Capitan bits
@@ -180,7 +180,7 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     ui.label(
         format!(
             "CSR_ALLOW_ANY_RECOVERY_OS (Skip BaseSystem Verification, primarily for custom recoveryOS images): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 8)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     // Only 1 bit was added in Sierra
@@ -190,7 +190,7 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     ui.label(
         format!(
             "CSR_ALLOW_UNAPPROVED_KEXTS (Allows unapproved kernel driver installation/loading): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 9)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     // Same for High Sierra
@@ -200,7 +200,7 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     ui.label(
         format!(
             "CSR_ALLOW_EXECUTABLE_POLICY_OVERRIDE (Allows override of executable policy): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 10)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
     // Same for Mojave
@@ -210,7 +210,7 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     ui.label(
         format!(
             "CSR_ALLOW_UNAUTHENTICATED_ROOT (Allows custom APFS snapshots to be booted): {}",
-            if bits & 1 {"Allowed"} else {"Forbidden"}
+            if (bits & (1 << 11)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
 }
