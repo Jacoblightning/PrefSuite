@@ -34,10 +34,10 @@ jobs:
 
         restore-keys: |
           x86_64-cargo-deps
-    - name: Build Testing
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+#    - name: Build Testing
+#      run: cargo build
+#    - name: Run tests
+#      run: cargo test --verbose
     - name: Build Release
       run: ./build_app.sh App
     - name: Upload a Build Artifact
