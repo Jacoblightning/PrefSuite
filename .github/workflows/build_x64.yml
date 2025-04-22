@@ -1,4 +1,4 @@
-name: Rust
+name: Build for Intel Macs
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     - name: Cache Deps
       uses: actions/cache@v4
       with:
-        key: cargo-deps-${{ hashFiles('Cargo.lock') }}
+        key: x86_64-cargo-deps-${{ hashFiles('Cargo.lock') }}
         path: |
           target
           ~/.cargo
@@ -34,5 +34,5 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.6.2
       with:
-        name: PrefSuite
+        name: PrefSuite-x86_64
         path: App
