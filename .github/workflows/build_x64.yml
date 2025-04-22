@@ -24,7 +24,7 @@ jobs:
           target
           ~/.cargo
         restore-keys: |
-          cargo-deps
+          x86_64-cargo-deps
     - name: Build Testing
       run: cargo build --verbose
     - name: Run tests
