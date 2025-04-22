@@ -2565,9 +2565,9 @@ dependencies = [
 
 [[package]]
 name = "objc2-core-wlan"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1694175a1db3ccb1cc423b12b2bf4dd1dd0dd03f1a6d128ca1ff4687b7bf1651"
+checksum = "5b0343dfef1016d82dd3b7e7383c0afd618437eca6fd03d5139a499ad9f97e6b"
 dependencies = [
  "bitflags 2.9.0",
  "objc2 0.6.1",
@@ -2670,9 +2670,9 @@ dependencies = [
 
 [[package]]
 name = "objc2-security"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3126341c65c5d5728423ae95d788e1b660756486ad0592307ab87ba02d9a7268"
+checksum = "e1f8e0ef3ab66b08c42644dcb34dba6ec0a574bbd8adbb8bdbdc7a2779731a44"
 dependencies = [
  "objc2 0.6.1",
  "objc2-core-foundation",
