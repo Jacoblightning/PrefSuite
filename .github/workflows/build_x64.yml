@@ -35,4 +35,4 @@ jobs:
       uses: actions/upload-artifact@v4.6.2
       with:
         name: PrefSuite
-        path: App/PrefSuite.app
+        path: App
