@@ -44,7 +44,7 @@ fn get_sip() -> Result<u32, String> {
     trace!("Successfully loaded /usr/lib/libSystem.dylib");
     debug!("Loading function csr_get_active_config");
 
-    let func: libloading::Symbol<unsafe extern fn(*mut u32) -> i32> = match unsafe { lib.get(b"csr_get_active_config") } {
+    let func: libloading::Symbol<unsafe extern "C" fn(*mut u32) -> i32> = match unsafe { lib.get(b"csr_get_active_config") } {
         Ok(func) => func,
         Err(e) => {
             error!("Failed to load function csr_get_active_config: {}", e);
@@ -56,8 +56,7 @@ fn get_sip() -> Result<u32, String> {
 
     debug!("Calling sip_active_config function");
     let mut sip_bits: u32 = 0;
-    let sip_bits_ptr = &raw mut sip_bits;
-    let sip_err = unsafe {func(sip_bits_ptr)};
+    let sip_err = unsafe {func(&raw mut sip_bits)};
     if sip_err != 0 {
         error!("sip_active_config function failed: {}", sip_err);
         return Err(sip_err.to_string())

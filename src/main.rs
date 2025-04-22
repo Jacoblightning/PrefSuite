@@ -20,14 +20,22 @@ mod app;
 
 use app::MyApp;
 use eframe::egui;
+use eframe::egui::include_image;
 use egui_extras::install_image_loaders;
 
 #[allow(unused_doc_comments)]
 fn main() -> eframe::Result {
     env_logger::init();
 
+    let icon = image::load_from_memory(include_bytes!("../resources/icon.jpg")).expect("Failed to load icon").to_rgb8();
+    let (width, height) = icon.dimensions();
+
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default(),
+        viewport: egui::ViewportBuilder::default().with_icon(egui::IconData {
+            rgba: icon.into_raw(),
+            width,
+            height,
+        }),
         ..Default::default()
     };
 
