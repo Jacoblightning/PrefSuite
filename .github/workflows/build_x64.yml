@@ -16,6 +16,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Cache Deps
+      uses: actions/cache@v4
+      with:
+        key: cargo-deps
+        path: |
+          target
+          ~/.cargo
     - name: Build Testing
       run: cargo build --verbose
     - name: Run tests
@@ -25,5 +32,5 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.6.2
       with:
-        name: PerfSuite
-        path: App/PerfSuite.app
+        name: PrefSuite
+        path: App/PrefSuite.app
