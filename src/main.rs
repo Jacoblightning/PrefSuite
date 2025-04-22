@@ -26,7 +26,7 @@ use egui_extras::install_image_loaders;
 fn main() -> eframe::Result {
     env_logger::init();
 
-    let icon = image::load_from_memory(include_bytes!("../resources/icon.jpg")).expect("Failed to load icon").to_rgba8();
+    let icon = image::load_from_memory(include_bytes!("../resources/icon.png")).expect("Failed to load icon").to_rgba8();
     let (width, height) = icon.dimensions();
 
     let options = eframe::NativeOptions {
