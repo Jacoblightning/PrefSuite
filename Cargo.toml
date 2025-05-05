@@ -16,7 +16,7 @@ strum = "~0.27.1"
 strum_macros = "~0.27.1"
 
 # I saw somewhere, someone said that adding this just to kill a process is bloat. Sadly, I agree
-sysinfo = "~0.34.2"
+sysinfo = "~0.35.0"
 
 # For checking the macOS version
 os_info = { version = "~3.10.0", default-features = false }
