@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Error script on first error
+set -e
+
 if [ -z "$1" ]; then
   echo "Usage: $0 <Directory to put app>"
   exit

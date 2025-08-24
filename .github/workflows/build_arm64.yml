@@ -21,14 +21,11 @@ jobs:
         with:
           key: arm64-cargo-deps-${{ hashFiles('Cargo.lock') }}
           path: |
-            target
+            ./target
             ~/.cargo
           restore-keys: |
-            arm64-cargo-deps
-#      - name: Build Testing
-#        run: cargo build
-#      - name: Run tests
-#        run: cargo test --verbose
+            arm64-cargo-deps-
+
       - name: Build Release
         run: ./build_app.sh App
       - name: Upload a Build Artifact
@@ -36,6 +33,7 @@ jobs:
         with:
           name: PrefSuite-arm64
           path: App
+
       - if: ${{ steps.cache-deps.outputs.cache-hit != 'true' }}
         name: Optimize cache
         continue-on-error: true

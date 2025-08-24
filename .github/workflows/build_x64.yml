@@ -24,20 +24,10 @@ jobs:
         key: x86_64-cargo-deps-${{ hashFiles('Cargo.lock') }}
         path: |
           ./target
-          
-          ~/.cargo/.crates.toml
-          ~/.cargo/.crates2.json
-          ~/.cargo/bin
-          ~/.cargo/registry/index
-          ~/.cargo/registry/cache
-          ~/.cargo/git/db
-
+          ~/.cargo
         restore-keys: |
-          x86_64-cargo-deps
-#    - name: Build Testing
-#      run: cargo build
-#    - name: Run tests
-#      run: cargo test --verbose
+          x86_64-cargo-deps-
+
     - name: Build Release
       run: ./build_app.sh App
     - name: Upload a Build Artifact
@@ -45,6 +35,7 @@ jobs:
       with:
         name: PrefSuite-x86_64
         path: App
+
     - if: ${{ steps.cache-deps.outputs.cache-hit != 'true' }}
       name: Optimize cache
       continue-on-error: true
