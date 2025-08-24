@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Error script on first error
-set -e
+# Error script on first error + debugging info
+set -xev
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <Directory to put app>"
