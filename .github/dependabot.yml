@@ -8,6 +8,7 @@ updates:
   - package-ecosystem: "cargo" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "weekly"
+      # Daily update checks
+      interval: "daily"
     # Allow up to 100 pull requests
     open-pull-requests-limit: 100
