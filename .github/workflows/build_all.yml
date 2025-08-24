@@ -1,4 +1,4 @@
-name: Build for Intel Macs
+name: Build all
 
 on:
   push:
@@ -10,9 +10,18 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build_matrix:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-13, macos-latest]
+        include:
+          - os: macos-13
+            arch: x86_64
+          - os: macos-latest
+            arch: arm64
 
-    runs-on: macos-13
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
@@ -21,19 +30,19 @@ jobs:
       id: cache-deps
       uses: actions/cache@v4
       with:
-        key: x86_64-cargo-deps-${{ hashFiles('Cargo.lock') }}
+        key: ${{ matrix.arch }}-cargo-deps-${{ hashFiles('Cargo.lock') }}
         path: |
           ./target
           ~/.cargo
         restore-keys: |
-          x86_64-cargo-deps-
+          ${{ matrix.arch }}-cargo-deps-
 
     - name: Build Release
       run: ./build_app.sh App
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.6.2
       with:
-        name: PrefSuite-x86_64
+        name: PrefSuite-${{ matrix.arch }}
         path: App
 
     - if: ${{ steps.cache-deps.outputs.cache-hit != 'true' }}
