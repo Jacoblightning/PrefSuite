@@ -7,28 +7,28 @@ edition = "2024"
 # GUI
 eframe = "0.31.1"
 egui_extras = { version = "0.31.1", features = ["image", "file"] }
-image = "~0.25.6"
-rfd = "~0.15.3"
+image = "0.25.6"
+rfd = "0.15.3"
 
 # Non GUI
 rusqlite = { version = "0.37.0", features = ["bundled"] }
-strum = "~0.27.1"
-strum_macros = "~0.27.1"
+strum = "0.27.1"
+strum_macros = "0.27.1"
 
 # I saw somewhere, someone said that adding this just to kill a process is bloat. Sadly, I agree
-sysinfo = "~0.34.2"
+sysinfo = "0.35.2"
 
 # For checking the macOS version
-os_info = { version = "~3.10.0", default-features = false }
+os_info = { version = "3.12.0", default-features = false }
 
 # Logging. Obviously
-env_logger = "~0.11.8"
-log = "~0.4.27"
+env_logger = "0.11.8"
+log = "0.4.27"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2-foundation = "~0.3.1"
+objc2-foundation = "0.3.1"
 
-objc2-core-wlan = "~0.3.1"
-objc2-io-bluetooth = "~0.3.1"
+objc2-core-wlan = "0.3.1"
+objc2-io-bluetooth = "0.3.1"
 
-libloading = "~0.8.6"
+libloading = "0.8.8"
