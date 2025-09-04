@@ -26,17 +26,22 @@ jobs:
       uses: actions/cache@v4
       with:
         # Set the restore key to be the actual key bc the cache action will not save a cache if it was hit
-        key: ${{ matrix.arch }}-cargo-deps-optimized
+        key: ${{ matrix.cachearch }}-cargo-deps-optimized
         path: |
           ./target
           ~/.cargo
         restore-keys: |
-          ${{ matrix.arch }}-cargo-deps-${{ inputs.cacheHash }}
+          ${{ matrix.cachearch }}-cargo-deps-${{ inputs.cacheHash }}
 
     - if: ${{ steps.cache-deps.outputs.cache-hit == 'true' }}
-      name: Fail Early
+      name: Fail Early if already optimized
       continue-on-error: false
       run: false
+
+    - if: ${{ steps.cache-deps.outputs.cache-hit == 'true' }}
+      name: Fail Early if cache doesn't exist
+      continue-on-error: false
+      run: test ! -d ./target
 
     - name: Install Cargo-cache
       run: cargo install cargo-cache
