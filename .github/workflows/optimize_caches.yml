@@ -1,0 +1,45 @@
+name: Optimize Caches
+
+on: 
+  workflow_dispatch:
+    inputs:
+      cacheHash:
+        description: 'Hash of Cargo.toml to use in cache retreival'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_matrix:
+    strategy:
+      fail-fast: true
+      matrix:
+        cachearch: [x86_64, arm64]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Retrieve Cache
+      id: cache-deps
+      uses: actions/cache@v4
+      with:
+        # Set the restore key to be the actual key bc the cache action will not save a cache if it was hit
+        key: ${{ matrix.arch }}-cargo-deps-optimized
+        path: |
+          ./target
+          ~/.cargo
+        restore-keys: |
+          ${{ matrix.arch }}-cargo-deps-${{ inputs.cacheHash }}
+
+    - if: ${{ steps.cache-deps.outputs.cache-hit == 'true' }}
+      name: Fail Early
+      continue-on-error: false
+      run: false
+
+    - name: Install Cargo-cache
+      run: cargo install cargo-cache
+
+    - name: Optimize Cache
+      run: cargo cache -e
