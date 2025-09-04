@@ -43,6 +43,11 @@ jobs:
       continue-on-error: false
       run: test ! -d ./target
 
+    - name: Install rust
+      run: |
+        snap install --classic rustup
+        rustup install stable
+
     - name: Install Cargo-cache
       run: cargo install cargo-cache
 
