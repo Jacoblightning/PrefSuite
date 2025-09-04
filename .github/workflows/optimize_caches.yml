@@ -45,7 +45,7 @@ jobs:
 
     - name: Install rust
       run: |
-        snap install --classic rustup
+        sudo snap install --classic rustup
         rustup install stable
 
     - name: Install Cargo-cache
