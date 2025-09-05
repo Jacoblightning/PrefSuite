@@ -1,3 +1,5 @@
+# [![Build Status](https://github.com/Jacoblightning/PrefSuite/actions/workflows/build_all.yml/badge.svg)](https://github.com/Jacoblightning/PrefSuite/actions/workflows/build_all.yml)
+
 # PrefSuite
 An alternative settings manager for macOS
 
