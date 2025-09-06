@@ -99,22 +99,25 @@ fn get_wifi_name() -> Result<String, String> {
 }
 
 #[cfg(target_os = "macos")]
-fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
-    let interface_wrapped = unsafe {
-        objc2_core_wlan::CWWiFiClient::new().interface()
-    };
+fn get_wifi_name_ffi() -> Result<String, String> {
+    match unsafe {objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface()} {
+        Some(interface) => unsafe {interface.ssid()},
+        None => Err("No interface found".into())
+    }
+}
 
-    let interface = match interface_wrapped {
-        Some(interface_) => interface_,
+#[cfg(not(target_os = "macos"))]
+fn get_wifi_name_ffi() -> Result<String, String> {panic!("This should never be run!");}
+
+
+#[cfg(target_os = "macos")]
+fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
+    let interface = match unsafe {objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface()} {
+        Some(interface) => interface,
         None => return Err("No interface found".into())
     };
 
-    let scan_result_wrapped = unsafe {
-        interface.scanForNetworksWithSSID_error(None)
-    };
-
-
-    let scan_result = match scan_result_wrapped {
+    let scan_result = match unsafe {interface.scanForNetworksWithSSID_error(None)} {
         Ok(scan_result_) => scan_result_,
         Err(e) => return Err(format!("Scan error: {}", e.to_string()))
     };
@@ -219,7 +222,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                 },
                 Err(e) => {
                     errored = true;
-                    format!("Unknown\nError: {}", e.to_string())
+                    format!("Unknown\nError: {e}")
                 }
             })).size(24.0));
 
@@ -230,7 +233,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                         Err(e) => {
                             rfd::MessageDialog::new()
                                 .set_title(format!("Error turning Wi-Fi {}", if connected {"Off"} else {"On"}))
-                                .set_description(format!("There was an error turning Wi-Fi {}:\n{}", if connected {"Off"} else {"On"}, e.to_string()))
+                                .set_description(format!("There was an error turning Wi-Fi {}:\n{e}", if connected {"Off"} else {"On"}))
                                 .set_buttons(rfd::MessageButtons::Ok)
                                 .set_level(rfd::MessageLevel::Error)
                                 .show();
@@ -242,7 +245,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
 
         if connected {
             ui.label(RichText::new("You are currently connected to:").heading());
-            ui.label(get_wifi_name().unwrap_or_else(|e| format!("\nError: {}", e.to_string())));
+            ui.label(get_wifi_name_ffi().unwrap_or_else(|e| format!("\nError: {e}")));
             ui.add_space(10.0);
 
             if app.wifi_data.network_cache.is_none() {
