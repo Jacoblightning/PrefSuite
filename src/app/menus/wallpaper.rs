@@ -266,58 +266,61 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             }
         };
 
-        if !wallpaper_path.is_empty() && !app.wallpaper_data.dberror {
-            let wallpaper_path = PathBuf::from(wallpaper_path);
-            if wallpaper_path.exists() {
-                ui.collapsing("Wallpaper:", |ui| {
-                    ui.image(String::from("file://") + wallpaper_path.to_str().unwrap());
-                });
-            } else {
-                ui.label(RichText::new("Wallpaper does not exist.").size(20.0));
-            }
-        }
+        egui::ScrollArea::vertical().show(ui, |ui| {
 
-        if !app.wallpaper_data.dberror {
-            if ui.button("Change Wallpaper").clicked() {
-                if let Some(path) = rfd::FileDialog::new()
-                    //.add_filter("image", &["png", "jpg", "jpeg", "webp", "heic", "heif"])
-                    .pick_file()
-                {
-                    app.wallpaper_data.new_path = Some(path.display().to_string());
-                }
-            }
-
-            if let Some(picked_path) = &app.wallpaper_data.new_path {
-                ui.horizontal(|ui| {
-                    ui.label("Picked file:");
-                    ui.monospace(picked_path);
-                });
-            }
-
-            if ui.button("Change").clicked() {
-                if let Some(new_path) = &app.wallpaper_data.new_path {
-                    app.wallpaper_data.noselect = false;
-                    match change_wallpaper(new_path) {
-                        Ok(_) => {
-                            app.wallpaper_data.changerror = None;
-                            app.wallpaper_data.reloadneeded = Some(true);
-                        }
-                        Err(e) => {
-                            app.wallpaper_data.changerror = Some(e.to_string());
-                        }
-                    }
+            if !wallpaper_path.is_empty() && !app.wallpaper_data.dberror {
+                let wallpaper_path = PathBuf::from(wallpaper_path);
+                if wallpaper_path.exists() {
+                    ui.collapsing("Wallpaper:", |ui| {
+                        ui.image(String::from("file://") + wallpaper_path.to_str().unwrap());
+                    });
                 } else {
-                    app.wallpaper_data.noselect = true;
+                    ui.label(RichText::new("Wallpaper does not exist.").size(20.0));
                 }
             }
 
-            if app.wallpaper_data.noselect {
-                ui.label("You have to select an image.");
-            }
+            if !app.wallpaper_data.dberror {
+                if ui.button("Change Wallpaper").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        //.add_filter("image", &["png", "jpg", "jpeg", "webp", "heic", "heif"])
+                        .pick_file()
+                    {
+                        app.wallpaper_data.new_path = Some(path.display().to_string());
+                    }
+                }
 
-            if let Some(error) = app.wallpaper_data.changerror.clone() {
-                ui.label(RichText::new(format!("Failed to set Wallpaper: {error}")).size(20.0));
+                if let Some(picked_path) = &app.wallpaper_data.new_path {
+                    ui.horizontal(|ui| {
+                        ui.label("Picked file:");
+                        ui.monospace(picked_path);
+                    });
+                }
+
+                if ui.button("Change").clicked() {
+                    if let Some(new_path) = &app.wallpaper_data.new_path {
+                        app.wallpaper_data.noselect = false;
+                        match change_wallpaper(new_path) {
+                            Ok(_) => {
+                                app.wallpaper_data.changerror = None;
+                                app.wallpaper_data.reloadneeded = Some(true);
+                            }
+                            Err(e) => {
+                                app.wallpaper_data.changerror = Some(e.to_string());
+                            }
+                        }
+                    } else {
+                        app.wallpaper_data.noselect = true;
+                    }
+                }
+
+                if app.wallpaper_data.noselect {
+                    ui.label("You have to select an image.");
+                }
+
+                if let Some(error) = app.wallpaper_data.changerror.clone() {
+                    ui.label(RichText::new(format!("Failed to set Wallpaper: {error}")).size(20.0));
+                }
             }
-        }
+        });
     });
 }
