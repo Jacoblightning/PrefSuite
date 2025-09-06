@@ -188,7 +188,8 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
 }
 
 fn join_network(ssid: &str, network_password: &str) -> Result<(), String> {
-    run_command!("networksetup", "-setairportnetwork", "en0", ssid, network_password)
+    run_command!("networksetup", "-setairportnetwork", "en0", ssid, network_password);
+    Ok(())
 }
 
 // TODO: Use threads so UI keeps responding

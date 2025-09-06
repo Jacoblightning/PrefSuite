@@ -34,22 +34,23 @@ pub struct SoundData {
 }
 
 /// VERY expensive function. Do NOT call unless required
-fn get_volume() -> u8 {
-    command_output!("osascript", "-e", "output volume of (get volume settings)")
+fn get_volume() -> Result<u8, String> {
+    Ok(command_output!("osascript", "-e", "output volume of (get volume settings)")
         .strip_suffix("\n")
         .unwrap()
         .parse::<u8>()
         .unwrap()
+    )
 }
 
 /// VERY expensive function. Do NOT call unless required
-fn set_volume(volume: u8) {
+fn set_volume(volume: u8) -> Result<(), String> {
     run_command!("osascript", "-e", format!("set volume output volume {volume}"))
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
     if !app.sound_data.reload_not_needed {
-        app.sound_data.last_volume = get_volume();
+        app.sound_data.last_volume = get_volume().unwrap();
         app.sound_data.reload_not_needed = true;
     }
 
@@ -77,7 +78,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             );
 
             if ui.button("Apply").clicked() {
-                set_volume(app.sound_data.slider_value as u8);
+                set_volume(app.sound_data.slider_value as u8).unwrap();
                 app.sound_data.reload_not_needed = false;
             }
         });
