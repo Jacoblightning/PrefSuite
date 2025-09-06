@@ -106,18 +106,25 @@ fn get_wifi_name() -> Result<String, String> {
 }
 
 #[cfg(target_os = "macos")]
-fn get_wifi_name_ffi() -> Result<String, String> {
+fn get_wifi_name_ffi(is_second_call: bool) -> Result<String, String> {
     match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
         Some(interface) => match unsafe {interface.ssid()} {
             Some(ssid) => Ok(unsafe {ssid.to_string()}),
-            None => Err("Could not get current SSID".into()),
+            None => {
+                if !is_second_call {
+                    // Try again after requesting location permission
+                    unsafe{objc2_core_location::new().requestWhenInUseAuthorization();}
+                    return get_wifi_name_ffi(true);
+                }
+                Err("Could not get current SSID".into())
+            },
         },
         None => Err("No interface found".into()),
     }
 }
 
 #[cfg(not(target_os = "macos"))]
-fn get_wifi_name_ffi() -> Result<String, String> {
+fn get_wifi_name_ffi(_: bool) -> Result<String, String> {
     panic!("This should never be run!");
 }
 
@@ -133,15 +140,17 @@ fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
         Err(e) => return Err(format!("Scan error: {}", e.to_string())),
     };
 
-    println!("Got {} networks from scan", scan_result.len());
+    debug!("Got {} networks from scan", scan_result.len());
 
     let mut networks = HashSet::new();
 
     for network in scan_result {
         match unsafe { network.ssid() } {
             Some(ssid) => {
-                networks.insert(ssid.to_string());
-            }
+                let ssid_str = ssid.to_string();
+                networks.insert(ssid_str);
+                trace!(" -{ssid_str}");
+            },
             None => return Err("Error getting network SSID".to_string()),
         }
     }
@@ -284,7 +293,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
 
         if connected {
             ui.label(RichText::new("You are currently connected to:").heading());
-            ui.label(get_wifi_name_ffi().unwrap_or_else(|e| format!("\nError: {e}")));
+            ui.label(get_wifi_name_ffi(false).unwrap_or_else(|e| format!("\nError: {e}")));
             ui.add_space(10.0);
 
             if app.wifi_data.network_cache.is_none() {
