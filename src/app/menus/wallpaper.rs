@@ -93,7 +93,7 @@ fn get_current_wallpaper_mavericks_to_sonoma() -> Result<String, String> {
         Ok(values[1].clone())
     } else if values.len() == 2 {
         Ok(values[0].clone())
-    } else if values.len() == 0 || values[0] == "3" {
+    } else if values.is_empty() || values[0] == "3" {
         Ok("Default Wallpaper".to_string())
     } else {
         Ok(values[0].clone())
@@ -280,14 +280,13 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             }
 
             if !app.wallpaper_data.dberror {
-                if ui.button("Change Wallpaper").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
+                if ui.button("Change Wallpaper").clicked()
+                    && let Some(path) = rfd::FileDialog::new()
                         //.add_filter("image", &["png", "jpg", "jpeg", "webp", "heic", "heif"])
                         .pick_file()
                     {
                         app.wallpaper_data.new_path = Some(path.display().to_string());
                     }
-                }
 
                 if let Some(picked_path) = &app.wallpaper_data.new_path {
                     ui.horizontal(|ui| {

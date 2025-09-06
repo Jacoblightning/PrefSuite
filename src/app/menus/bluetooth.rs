@@ -21,7 +21,6 @@ use crate::app::{Menu, MyApp};
 use eframe::egui;
 use eframe::egui::RichText;
 
-use log::{debug, error, log_enabled, info, Level, trace};
 
 #[cfg(target_os = "macos")]
 fn get_nearby_bluetooth() -> Result<HashSet<String>, String>{

@@ -226,8 +226,8 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                 }
             })).size(24.0));
 
-            if !errored {
-                if ui.button(RichText::new(format!("Turn {}", if connected {"Off"} else {"On"}))).clicked() {
+            if !errored
+                && ui.button(RichText::new(format!("Turn {}", if connected {"Off"} else {"On"}))).clicked() {
                     match set_wifi(!connected) {
                         Ok(_) => (),
                         Err(e) => {
@@ -240,7 +240,6 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                         }
                     }
                 }
-            }
         });
 
         if connected {

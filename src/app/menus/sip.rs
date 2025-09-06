@@ -20,7 +20,7 @@ use crate::app::{Menu, MyApp};
 
 use eframe::egui;
 use eframe::egui::RichText;
-use log::{debug, error, info, trace};
+use log::error;
 use os_info::Version;
 
 #[derive(Default)]
@@ -79,7 +79,7 @@ fn is_sip_disabled(bits: u32, version: &Version) -> bool {
     let big_sur = Version::Semantic(11, 0, 0);
 
     // Checking for all El Capitan bits except allow_apple_internal as that can't be set
-    if !((bits & 239) == 239) {
+    if ((bits & 239) != 239) {
         return false;
     } else if version < &sierra {
         return true;
@@ -107,11 +107,7 @@ fn is_sip_disabled(bits: u32, version: &Version) -> bool {
     }
 
     // check for allow_unauthenticated_root
-    if (bits & 2048) == 0 {
-        false
-    } else {
-        true
-    }
+    (bits & 2048) != 0
 }
 
 fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
@@ -122,7 +118,7 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
 
     ui.label(RichText::new(format!(
         "CSR/SIP is: {}",
-        if bits == 0 {"Fully Enabled"} else if is_sip_disabled(bits, &version) {"Fully Disabled"} else {"Custom:"}
+        if bits == 0 {"Fully Enabled"} else if is_sip_disabled(bits, version) {"Fully Disabled"} else {"Custom:"}
     )).size(32.0));
     ui.label(
         format!(
@@ -238,7 +234,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             match get_sip() {
                 Ok(bits) => {app.sip_data.bits = Some(bits);},
                 Err(e) => {
-                    error!("Failed to get SIP: {}", e);
+                    error!("Failed to get SIP: {e}");
                 }
             }
         }
