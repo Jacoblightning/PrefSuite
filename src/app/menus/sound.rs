@@ -45,7 +45,8 @@ fn get_volume() -> Result<u8, String> {
 
 /// VERY expensive function. Do NOT call unless required
 fn set_volume(volume: u8) -> Result<(), String> {
-    run_command!("osascript", "-e", format!("set volume output volume {volume}"))
+    run_command!("osascript", "-e", format!("set volume output volume {volume}"));
+    Ok(())
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
