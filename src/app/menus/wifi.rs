@@ -149,8 +149,8 @@ fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
         match unsafe { network.ssid() } {
             Some(ssid) => {
                 let ssid_str = ssid.to_string();
+                trace!(" -{}", &ssid_str);
                 networks.insert(ssid_str);
-                trace!(" -{ssid_str}");
             },
             None => return Err("Error getting network SSID".to_string()),
         }
