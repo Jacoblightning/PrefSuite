@@ -18,21 +18,29 @@
 
 use crate::app::password as egui_password;
 use crate::app::{Menu, MyApp};
-use log::{debug, error, info, trace};
-use crate::{command_output, run_command};
+use crate::{command_output, run_command, command_output_option};
 use std::collections::HashSet;
 use std::path::PathBuf;
+use log::{debug, error, info, trace};
 
 use eframe::egui;
 use eframe::egui::RichText;
 
 use std::str::Split;
+
+struct WifiInfo {
+    // Current Network
+    current: Option<String>,
+    // Available Networks
+    nearby: Option<HashSet<String>>,
+}
+
 #[derive(Default)]
 pub struct WifiData {
-    // Currently Selected Network
+    // Wifi info struct
+    wifi_info: Option<WifiInfo>,
+    // Currently selected network input storage
     selected_network: String,
-    // Available networks cache
-    network_cache: Option<Result<HashSet<String>, String>>,
     // Password input progress
     password: String,
 }
@@ -66,84 +74,51 @@ fn set_wifi(on: bool) -> Result<(), String> {
     }
 }
 
-fn get_wifi_name() -> Result<String, String> {
-    let binding = os_info::get();
-    let os_version = binding.version();
-
-    if os_version < &os_info::Version::Semantic(15, 0, 0) {
-        let network = command_output!("networksetup", "-getairportnetwork", "en0");
-
-        if network == "You are not associated with an AirPort network.\n" {
-            return Ok("Not connected".into());
-        }
-
-        let network = network
-            .strip_prefix("Current Wi-Fi Network: ")
-            .unwrap()
-            .strip_suffix("\n")
-            .unwrap();
-
-        Ok(network.into())
-    } else {
-        // Sequoia very graciously decided to remove that command in favor of one that can take up to ~100x as long
-        let network = command_output!("ipconfig", "getsummary", "en0");
-
-        if network.contains("Active : FALSE") {
-            return Ok("Not connected".into());
-        }
-
-        if let Some(before) = network.find(" SSID") {
-            if let Some(after) = network.find("Security") {
-                let netconn = network[before + 8..after].to_string().trim().to_string();
-
-                Ok(netconn)
-            } else {
-                Err("\"Security\" not in command output".into())
-            }
-        } else {
-            Err("\"SSID\" not in command output".into())
-        }
-    }
-}
 
 #[cfg(target_os = "macos")]
-fn get_wifi_name_ffi(is_second_call: bool) -> Result<String, String> {
+fn get_current_wifi_ffi() -> Oprion<String> {
     match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
         Some(interface) => match unsafe {interface.ssid()} {
-            Some(ssid) => Ok(ssid.to_string()),
+            Some(ssid) => Some(ssid.to_string()),
             None => {
-                if !is_second_call {
-                    // Try again after requesting location permission
-                    unsafe{objc2_core_location::CLLocationManager::new().requestWhenInUseAuthorization();}
-                    return get_wifi_name_ffi(true);
-                }
-                Err("Could not get current SSID".into())
+                error!("Could not get current SSID");
+                None
             },
         },
-        None => Err("No interface found".into()),
+        None => {
+            error!("No interface found");
+            None
+        },
     }
 }
-
 #[cfg(not(target_os = "macos"))]
-fn get_wifi_name_ffi(_: bool) -> Result<String, String> {
+fn get_current_wifi_ffi() -> Option<String> {
     panic!("This should never be run!");
 }
 
 #[cfg(target_os = "macos")]
-fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
+fn get_nearby_wifi_ffi() -> Option<HashSet<String>> {
     let interface = match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
         Some(interface) => interface,
-        None => return Err("No interface found".into()),
+        None => {
+            error!("No interface found");
+            return None;
+        },
     };
 
     let scan_result = match unsafe { interface.scanForNetworksWithSSID_error(None) } {
-        Ok(scan_result_) => scan_result_,
-        Err(e) => return Err(format!("Scan error: {}", e.to_string())),
+        Ok(scan_result) => scan_result,
+        Err(e) => {
+            error!("Scan error: {e}");
+            return None;
+        },
     };
 
     debug!("Got {} networks from scan", scan_result.len());
 
     let mut networks = HashSet::new();
+
+    let mut errored = false;
 
     for network in scan_result {
         match unsafe { network.ssid() } {
@@ -152,40 +127,31 @@ fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
                 trace!(" -{}", &ssid_str);
                 networks.insert(ssid_str);
             },
-            None => return Err("Error getting network SSID".to_string()),
+            None => {errored = true;},
         }
     }
 
-    Ok(networks)
+    if errored && networks.is_empty() {
+        error!("Error getting network SSID");
+        return None;
+    }
+
+    Some(networks)
 }
 #[cfg(not(target_os = "macos"))]
-fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
-    panic!("This should never be run!");
-}
+fn get_nearby_wifi_ffi() -> Option<HashSet<String>> {panic!("This should never be run!");}
 
-fn get_available_networks() -> Result<HashSet<String>, String> {
+
+fn get_nearby_wifi_airport() -> Option<HashSet<String>> {
     let airport = PathBuf::from(
         "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
     );
 
     if !airport.exists() {
-        return if cfg!(target_os = "macos") {
-            // Try using the ffi interface as a last resort (very temperamental)
-            match get_available_networks_ffi() {
-                Ok(available_networks) => Ok(available_networks),
-                Err(e) => Err(format!(
-                    "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"
-                )),
-            }
-        } else {
-            Err(
-                "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
-                    .into(),
-            )
-        };
+        return None;
     }
 
-    let comm = command_output!(airport, "-s");
+    let comm = command_output_option!(airport, "-s");
 
     let mut raw_networks: Split<&str> = comm.split("\n");
     let header = raw_networks.next().unwrap();
@@ -199,22 +165,118 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
                 networks.insert(realname.trim().into());
             }
         }
-
-        Ok(networks)
-    } else if cfg!(target_os = "macos") {
-        // Try using the ffi interface as a last resort (very temperamental)
-        match get_available_networks_ffi() {
-            Ok(available_networks) => Ok(available_networks),
-            Err(e) => Err(format!(
-                "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"
-            )),
-        }
-    } else {
-        Err(
-            "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
-                .into(),
-        )
+        return Some(networks);
     }
+    None
+}
+
+fn get_nearby_wifi_heuristic() -> Option<HashSet<String>> {
+    info!("Initializing nearby wifi heuristic!");
+
+    
+    info!("Trying airport method.");
+    let nets = get_nearby_wifi_airport();
+    if nets.is_some() {
+        info!("Airport method worked!");
+        return nets;
+    }
+    info!("Airport method failed :(");
+
+
+    info!("Trying FFI method.");
+    let nets = get_nearby_wifi_ffi();
+    if nets.is_some() {
+        info!("FFI method worked!");
+        return nets;
+    }
+    info!("FFI method failed :(");
+
+
+    error!("All methods failed :(");
+    None
+}
+
+fn get_current_wifi_networksetup(os_version: &os_info::Version) -> Option<String> {
+    if os_version < &os_info::Version::Semantic(15, 0, 0) {
+        let network = command_output_option!("networksetup", "-getairportnetwork", "en0");
+
+        if network == "You are not associated with an AirPort network.\n" {
+            return Some("Not connected".into());
+        }
+
+        let network = network
+            .strip_prefix("Current Wi-Fi Network: ")
+            .unwrap()
+            .strip_suffix("\n")
+            .unwrap();
+
+        Some(network.into())
+    } else {
+        None
+    }
+}
+
+fn get_current_wifi_heuristic(os_version: &os_info::Version) -> Option<String> {
+    info!("Initializing current wifi heuristic!");
+
+
+    info!("Trying networksetup method.");
+    let net = get_current_wifi_networksetup(os_version);
+    if net.is_some() {
+        info!("Networksetup method worked!");
+        return net;
+    }
+    info!("Networksetup method failed :(");
+
+
+    info!("Trying FFI method.");
+    let net = get_current_wifi_ffi();
+    if net.is_some() {
+        info!("FFI method worked!");
+        return net;
+    }
+    info!("FFI method failed :(");
+
+
+    error!("All methods failed :(");
+    None
+}
+
+fn get_wifi_info_heuristic() -> Option<WifiInfo> {
+    info!("Initializing wifi info heuristic!");
+    let binding = os_info::get();
+    let os_version = binding.version();
+    info!("OS version: {os_version}");
+
+    let mut nearby = get_nearby_wifi_heuristic();
+    let mut current = get_current_wifi_heuristic(os_version);
+
+    if nearby.is_none() || current.is_none() {
+        // Reliable method (at least currently) but SLOOOOOOW!!!
+        let mut wifi_info_json = json::parse(
+            &command_output_option!("system_profiler", "-json", "SPAirPortDataType")
+        ).unwrap();
+
+        if current.is_none() {
+            current = Some(wifi_info_json["SPAirPortDataType"][0]["spairport_airport_interfaces"][0]["spairport_current_network_information"]["_name"].take_string().unwrap());
+        }
+        if nearby.is_none() {
+            let mut nearby_new = HashSet::new();
+            
+            for member in wifi_info_json["SPAirPortDataType"][0]["spairport_airport_interfaces"][0]["spairport_airport_other_local_wireless_networks"].members_mut() {
+                nearby_new.insert(
+                    member["_name"].take_string().unwrap()
+                );
+            }
+
+            nearby = Some(nearby_new);
+        }
+    }
+
+    Some(WifiInfo {
+        nearby,
+        current
+    })
 }
 
 fn join_network(ssid: &str, network_password: &str) -> Result<(), String> {
@@ -293,18 +355,23 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         });
 
         if connected {
+            if app.wifi_data.wifi_info.is_none() {
+                // TODO: Consider Just using an Option around a HashSet. (No Result)
+                app.wifi_data.wifi_info = get_wifi_info_heuristic()
+            }
+            
             ui.label(RichText::new("You are currently connected to:").heading());
-            ui.label(get_wifi_name_ffi(false).unwrap_or_else(|e| format!("\nError: {e}")));
+            let errmsg = "Error! Please check the logs.";
+            ui.label(if let Some(curr) = app.wifi_data.wifi_info.as_ref().unwrap().current.as_ref() {
+                curr
+            } else {
+                errmsg
+            });
             ui.add_space(10.0);
 
-            if app.wifi_data.network_cache.is_none() {
-                // TODO: Consider Just using an Option around a HashSet. (No Result)
-                app.wifi_data.network_cache = Some(get_available_networks())
-            }
-
             //Dropdown of available networks
-            match app.wifi_data.network_cache.as_ref().unwrap() {
-                Ok(networks) => {
+            match app.wifi_data.wifi_info.as_ref().unwrap().nearby.as_ref() {
+                Some(networks) => {
                     egui::ComboBox::from_label("Available Networks")
                         .selected_text(&app.wifi_data.selected_network)
                         .show_ui(ui, |ui| {
@@ -322,11 +389,11 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                         });
 
                     if ui.button("Re-Scan").clicked() {
-                        app.wifi_data.network_cache = None
+                        app.wifi_data.wifi_info = None
                     }
                 }
-                Err(e) => {
-                    ui.label(RichText::new(format!("Error: {e}")).heading());
+                None => {
+                    ui.label(RichText::new("Error! Please check the logs.").heading());
                 }
             }
 

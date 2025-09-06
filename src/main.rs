@@ -20,11 +20,17 @@ mod app;
 
 use app::MyApp;
 use eframe::egui;
+use log::{debug, error, info, trace};
 use egui_extras::install_image_loaders;
 
 #[allow(unused_doc_comments)]
 fn main() -> eframe::Result {
     env_logger::init();
+
+    trace!("Test trace");
+    debug!("Test debug");
+    info!( "Test info");
+    error!("Test error");
 
     let icon = image::load_from_memory(include_bytes!("../resources/icon.png"))
         .expect("Failed to load icon")
