@@ -18,7 +18,7 @@
 
 use crate::app::password as egui_password;
 use crate::app::{Menu, MyApp};
-use log::{debug, error, log_enabled, info, trace, Level};
+use log::{debug, error, info, trace};
 use crate::{command_output, run_command};
 use std::collections::HashSet;
 use std::path::PathBuf;

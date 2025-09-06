@@ -17,7 +17,7 @@
 */
 use crate::app::{Menu, MyApp};
 use std::collections::HashSet;
-use log::{debug, error, log_enabled, info, trace, Level};
+use log::{debug, error, info, trace};
 use eframe::egui;
 use eframe::egui::RichText;
 
