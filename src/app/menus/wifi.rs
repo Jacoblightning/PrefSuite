@@ -108,7 +108,10 @@ fn get_wifi_name() -> Result<String, String> {
 #[cfg(target_os = "macos")]
 fn get_wifi_name_ffi() -> Result<String, String> {
     match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
-        Some(interface) => unsafe { interface.ssid() },
+        Some(interface) => match unsafe {interface.ssid()} {
+            Some(ssid) => Ok(unsafe {ssid.to_string()}),
+            None => Err("Could not get current SSID".into()),
+        },
         None => Err("No interface found".into()),
     }
 }

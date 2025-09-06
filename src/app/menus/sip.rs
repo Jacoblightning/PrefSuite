@@ -20,7 +20,7 @@ use crate::app::{Menu, MyApp};
 
 use eframe::egui;
 use eframe::egui::RichText;
-use log::error;
+use log::{debug, error, log_enabled, info, trace, Level};
 use os_info::Version;
 
 #[derive(Default)]
@@ -79,7 +79,7 @@ fn is_sip_disabled(bits: u32, version: &Version) -> bool {
     let big_sur = Version::Semantic(11, 0, 0);
 
     // Checking for all El Capitan bits except allow_apple_internal as that can't be set
-    if ((bits & 239) != 239) {
+    if (bits & 239) != 239 {
         return false;
     } else if version < &sierra {
         return true;
