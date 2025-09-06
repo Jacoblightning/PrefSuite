@@ -21,7 +21,7 @@ use crate::app::{Menu, MyApp};
 use eframe::egui;
 use eframe::egui::RichText;
 
-use std::process::Command;
+use crate::{command_output, run_command};
 
 #[derive(Default)]
 pub struct SoundData {
@@ -35,30 +35,16 @@ pub struct SoundData {
 
 /// VERY expensive function. Do NOT call unless required
 fn get_volume() -> u8 {
-    String::from_utf8(
-        Command::new("osascript")
-            .arg("-e")
-            .arg("output volume of (get volume settings)")
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap()
-    .strip_suffix("\n")
-    .unwrap()
-    .parse::<u8>()
-    .unwrap()
+    command_output!("osascript", "-e", "output volume of (get volume settings)")
+        .strip_suffix("\n")
+        .unwrap()
+        .parse::<u8>()
+        .unwrap()
 }
 
 /// VERY expensive function. Do NOT call unless required
 fn set_volume(volume: u8) {
-    Command::new("osascript")
-        .arg("-e")
-        .arg(format!("set volume output volume {volume}"))
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
+    run_command!("osascript", "-e", format!("set volume output volume {volume}"))
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {

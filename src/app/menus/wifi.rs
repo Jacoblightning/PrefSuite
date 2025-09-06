@@ -25,7 +25,6 @@ use std::path::PathBuf;
 use eframe::egui;
 use eframe::egui::RichText;
 
-use std::process::Command;
 use std::str::Split;
 #[derive(Default)]
 pub struct WifiData {
@@ -48,7 +47,7 @@ fn is_wifi_on() -> Result<bool, String> {
     } else if part == "Off" {
         Ok(false)
     } else {
-        Err(format!("d{}", "part.to_string()"))
+        Err(part.to_string())
     }
 }
 
@@ -78,7 +77,7 @@ fn get_wifi_name() -> Result<String, String> {
 
         Ok(network.into())
     } else {
-        // Sequoia very graciously decided to remove that command in favour of one that can take up to ~100x as long
+        // Sequoia very graciously decided to remove that command in favor of one that can take up to ~100x as long
         let network = command_output!("ipconfig", "getsummary", "en0");
 
         if network.contains("Active : FALSE") {
@@ -158,7 +157,7 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
         }
     }
 
-    let comm = String::from_utf8(Command::new(airport).arg("-s").output().unwrap().stdout).unwrap();
+    let comm = command_output!(airport, "-s");
 
     let mut raw_networks: Split<&str> = comm.split("\n");
     let header = raw_networks.next().unwrap();
@@ -189,15 +188,7 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
 }
 
 fn join_network(ssid: &str, network_password: &str) -> Result<(), String> {
-    match Command::new("networksetup")
-        .arg("-setairportnetwork")
-        .arg("en0")
-        .arg(ssid)
-        .arg(network_password)
-        .spawn() {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e.to_string())
-    }
+    run_command!("networksetup", "-setairportnetwork", "en0", ssid, network_password)
 }
 
 // TODO: Use threads so UI keeps responding

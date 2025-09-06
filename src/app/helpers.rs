@@ -1,4 +1,4 @@
-
+// 
 
 /// Macro for running a command and getting the output.
 /// To be used inside a function returning Result<?, String>
