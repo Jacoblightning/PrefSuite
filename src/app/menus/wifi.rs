@@ -113,7 +113,7 @@ fn get_wifi_name_ffi(is_second_call: bool) -> Result<String, String> {
             None => {
                 if !is_second_call {
                     // Try again after requesting location permission
-                    unsafe{objc2_core_location::new().requestWhenInUseAuthorization();}
+                    unsafe{objc2_core_location::CLLocationManager::new().requestWhenInUseAuthorization();}
                     return get_wifi_name_ffi(true);
                 }
                 Err("Could not get current SSID".into())
