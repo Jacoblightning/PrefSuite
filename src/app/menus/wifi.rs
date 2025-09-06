@@ -17,8 +17,8 @@
 */
 
 use crate::app::password as egui_password;
-use crate::{command_output, run_command};
 use crate::app::{Menu, MyApp};
+use crate::{command_output, run_command};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -52,9 +52,16 @@ fn is_wifi_on() -> Result<bool, String> {
 }
 
 fn set_wifi(on: bool) -> Result<(), String> {
-    match run_command!("networksetup", "-setairportpower", "en0", if on { "On" } else { "Off" }).wait() {
+    match run_command!(
+        "networksetup",
+        "-setairportpower",
+        "en0",
+        if on { "On" } else { "Off" }
+    )
+    .wait()
+    {
         Ok(_) => Ok(()),
-        Err(e) => Err(e.to_string())
+        Err(e) => Err(e.to_string()),
     }
 }
 
@@ -86,7 +93,7 @@ fn get_wifi_name() -> Result<String, String> {
 
         if let Some(before) = network.find(" SSID") {
             if let Some(after) = network.find("Security") {
-                let netconn = network[before+8..after].to_string().trim().to_string();
+                let netconn = network[before + 8..after].to_string().trim().to_string();
 
                 Ok(netconn)
             } else {
@@ -100,26 +107,27 @@ fn get_wifi_name() -> Result<String, String> {
 
 #[cfg(target_os = "macos")]
 fn get_wifi_name_ffi() -> Result<String, String> {
-    match unsafe {objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface()} {
-        Some(interface) => unsafe {interface.ssid()},
-        None => Err("No interface found".into())
+    match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
+        Some(interface) => unsafe { interface.ssid() },
+        None => Err("No interface found".into()),
     }
 }
 
 #[cfg(not(target_os = "macos"))]
-fn get_wifi_name_ffi() -> Result<String, String> {panic!("This should never be run!");}
-
+fn get_wifi_name_ffi() -> Result<String, String> {
+    panic!("This should never be run!");
+}
 
 #[cfg(target_os = "macos")]
 fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
-    let interface = match unsafe {objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface()} {
+    let interface = match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
         Some(interface) => interface,
-        None => return Err("No interface found".into())
+        None => return Err("No interface found".into()),
     };
 
-    let scan_result = match unsafe {interface.scanForNetworksWithSSID_error(None)} {
+    let scan_result = match unsafe { interface.scanForNetworksWithSSID_error(None) } {
         Ok(scan_result_) => scan_result_,
-        Err(e) => return Err(format!("Scan error: {}", e.to_string()))
+        Err(e) => return Err(format!("Scan error: {}", e.to_string())),
     };
 
     println!("Got {} networks from scan", scan_result.len());
@@ -127,18 +135,20 @@ fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
     let mut networks = HashSet::new();
 
     for network in scan_result {
-        match unsafe {network.ssid()} {
+        match unsafe { network.ssid() } {
             Some(ssid) => {
                 networks.insert(ssid.to_string());
             }
-            None => return Err("Error getting network SSID".to_string())
+            None => return Err("Error getting network SSID".to_string()),
         }
     }
 
     Ok(networks)
 }
 #[cfg(not(target_os = "macos"))]
-fn get_available_networks_ffi() -> Result<HashSet<String>, String> {panic!("This should never be run!");}
+fn get_available_networks_ffi() -> Result<HashSet<String>, String> {
+    panic!("This should never be run!");
+}
 
 fn get_available_networks() -> Result<HashSet<String>, String> {
     let airport = PathBuf::from(
@@ -150,14 +160,16 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
             // Try using the ffi interface as a last resort (very temperamental)
             match get_available_networks_ffi() {
                 Ok(available_networks) => Ok(available_networks),
-                Err(e) => Err(format!("Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"))
+                Err(e) => Err(format!(
+                    "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"
+                )),
             }
         } else {
             Err(
                 "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :("
                     .into(),
             )
-        }
+        };
     }
 
     let comm = command_output!(airport, "-s");
@@ -180,7 +192,9 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
         // Try using the ffi interface as a last resort (very temperamental)
         match get_available_networks_ffi() {
             Ok(available_networks) => Ok(available_networks),
-            Err(e) => Err(format!("Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"))
+            Err(e) => Err(format!(
+                "Sadly, Apple has discontinued the tool that we use to scan for wifi networks :(\nAnd the backup tool failed with error: {e}"
+            )),
         }
     } else {
         Err(
@@ -191,7 +205,13 @@ fn get_available_networks() -> Result<HashSet<String>, String> {
 }
 
 fn join_network(ssid: &str, network_password: &str) -> Result<(), String> {
-    run_command!("networksetup", "-setairportnetwork", "en0", ssid, network_password);
+    run_command!(
+        "networksetup",
+        "-setairportnetwork",
+        "en0",
+        ssid,
+        network_password
+    );
     Ok(())
 }
 
@@ -206,40 +226,57 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             ui.label(RichText::new("Wi-Fi Menu:").size(36.0));
         });
 
-
         let mut connected = false;
         ui.horizontal(|ui| {
             let errored: bool;
-            ui.label(RichText::new(format!("Wi-Fi is {}", match is_wifi_on() {
-                Ok(o) => {
-                    errored = false;
-                    if o {
-                        connected = true;
-                        "On".to_string()
-                    } else {
-                        "Off".to_string()
-                    }
-                },
-                Err(e) => {
-                    errored = true;
-                    format!("Unknown\nError: {e}")
-                }
-            })).size(24.0));
-
-            if !errored
-                && ui.button(RichText::new(format!("Turn {}", if connected {"Off"} else {"On"}))).clicked() {
-                    match set_wifi(!connected) {
-                        Ok(_) => (),
+            ui.label(
+                RichText::new(format!(
+                    "Wi-Fi is {}",
+                    match is_wifi_on() {
+                        Ok(o) => {
+                            errored = false;
+                            if o {
+                                connected = true;
+                                "On".to_string()
+                            } else {
+                                "Off".to_string()
+                            }
+                        }
                         Err(e) => {
-                            rfd::MessageDialog::new()
-                                .set_title(format!("Error turning Wi-Fi {}", if connected {"Off"} else {"On"}))
-                                .set_description(format!("There was an error turning Wi-Fi {}:\n{e}", if connected {"Off"} else {"On"}))
-                                .set_buttons(rfd::MessageButtons::Ok)
-                                .set_level(rfd::MessageLevel::Error)
-                                .show();
+                            errored = true;
+                            format!("Unknown\nError: {e}")
                         }
                     }
+                ))
+                .size(24.0),
+            );
+
+            if !errored
+                && ui
+                    .button(RichText::new(format!(
+                        "Turn {}",
+                        if connected { "Off" } else { "On" }
+                    )))
+                    .clicked()
+            {
+                match set_wifi(!connected) {
+                    Ok(_) => (),
+                    Err(e) => {
+                        rfd::MessageDialog::new()
+                            .set_title(format!(
+                                "Error turning Wi-Fi {}",
+                                if connected { "Off" } else { "On" }
+                            ))
+                            .set_description(format!(
+                                "There was an error turning Wi-Fi {}:\n{e}",
+                                if connected { "Off" } else { "On" }
+                            ))
+                            .set_buttons(rfd::MessageButtons::Ok)
+                            .set_level(rfd::MessageLevel::Error)
+                            .show();
+                    }
                 }
+            }
         });
 
         if connected {
@@ -290,7 +327,10 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                         Err(e) => {
                             rfd::MessageDialog::new()
                                 .set_title("Error Connecting to Network")
-                                .set_description(format!("There was an error connecting to {}:\n{}", app.wifi_data.selected_network, e))
+                                .set_description(format!(
+                                    "There was an error connecting to {}:\n{}",
+                                    app.wifi_data.selected_network, e
+                                ))
                                 .set_buttons(rfd::MessageButtons::Ok)
                                 .set_level(rfd::MessageLevel::Error)
                                 .show();

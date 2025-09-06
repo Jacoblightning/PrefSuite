@@ -26,7 +26,9 @@ use egui_extras::install_image_loaders;
 fn main() -> eframe::Result {
     env_logger::init();
 
-    let icon = image::load_from_memory(include_bytes!("../resources/icon.png")).expect("Failed to load icon").to_rgba8();
+    let icon = image::load_from_memory(include_bytes!("../resources/icon.png"))
+        .expect("Failed to load icon")
+        .to_rgba8();
     let (width, height) = icon.dimensions();
 
     let options = eframe::NativeOptions {
@@ -53,8 +55,12 @@ fn main() -> eframe::Result {
             // Image Support
             install_image_loaders(&cc.egui_ctx);
 
-            Ok(if cfg!(target_os = "macos") {Box::<MyApp>::default()} else {Box::<MacosOnly>::default()})
-        })
+            Ok(if cfg!(target_os = "macos") {
+                Box::<MyApp>::default()
+            } else {
+                Box::<MacosOnly>::default()
+            })
+        }),
     )
 }
 

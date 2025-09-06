@@ -18,9 +18,10 @@
 
 mod menus;
 
-pub mod password;
 pub mod helpers;
+pub mod password;
 
+use crate::app::menus::sip::SIPData;
 use crate::app::menus::sound::SoundData;
 use crate::app::menus::wallpaper::WallpaperData;
 use crate::app::menus::wifi::WifiData;
@@ -28,7 +29,6 @@ use eframe::egui;
 use eframe::egui::RichText;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
-use crate::app::menus::sip::{SIPData};
 
 #[derive(Display, EnumIter, Default)]
 enum Menu {

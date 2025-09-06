@@ -118,7 +118,8 @@ fn get_current_wallpaper_sonoma_plus() -> Result<String, String> {
 }
 
 // TODO: Modify the plist file
-#[allow(unused_variables)] fn change_wallpaper_pre_mavericks(new_path: &str) -> Result<(), String> {
+#[allow(unused_variables)]
+fn change_wallpaper_pre_mavericks(new_path: &str) -> Result<(), String> {
     Ok(())
 }
 
@@ -267,7 +268,6 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         };
 
         egui::ScrollArea::vertical().show(ui, |ui| {
-
             if !wallpaper_path.is_empty() && !app.wallpaper_data.dberror {
                 let wallpaper_path = PathBuf::from(wallpaper_path);
                 if wallpaper_path.exists() {
@@ -284,9 +284,9 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
                     && let Some(path) = rfd::FileDialog::new()
                         //.add_filter("image", &["png", "jpg", "jpeg", "webp", "heic", "heif"])
                         .pick_file()
-                    {
-                        app.wallpaper_data.new_path = Some(path.display().to_string());
-                    }
+                {
+                    app.wallpaper_data.new_path = Some(path.display().to_string());
+                }
 
                 if let Some(picked_path) = &app.wallpaper_data.new_path {
                     ui.horizontal(|ui| {

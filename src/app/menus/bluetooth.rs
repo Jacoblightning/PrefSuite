@@ -15,28 +15,29 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-use std::collections::HashSet;
 use crate::app::{Menu, MyApp};
+use std::collections::HashSet;
 
 use eframe::egui;
 use eframe::egui::RichText;
 
-
 #[cfg(target_os = "macos")]
-fn get_nearby_bluetooth() -> Result<HashSet<String>, String>{
+fn get_nearby_bluetooth() -> Result<HashSet<String>, String> {
     use objc2_io_bluetooth::IOBluetoothDevice;
     info!("Scanning for bluetooth devices");
 
-    let inquiry = unsafe {objc2_io_bluetooth::IOBluetoothDeviceInquiry::new()};
+    let inquiry = unsafe { objc2_io_bluetooth::IOBluetoothDeviceInquiry::new() };
 
     trace!("Aquired IOBluetoothDeviceInquiry");
     //inquiry.setInquiryLength()
     //inquiry.setUpdateNewDeviceNames()
-    unsafe { inquiry.start(); }
+    unsafe {
+        inquiry.start();
+    }
 
     // TODO: Temp
     std::thread::sleep(std::time::Duration::from_secs(11));
-    let devices = match unsafe {inquiry.foundDevices()} {
+    let devices = match unsafe { inquiry.foundDevices() } {
         Some(devices) => devices,
         None => {
             error!("Error unwrapping found devices!");
@@ -46,13 +47,13 @@ fn get_nearby_bluetooth() -> Result<HashSet<String>, String>{
 
     info!("Found {} bluetooth devices.", devices.len());
 
-    let mut device_names  = HashSet::new();
+    let mut device_names = HashSet::new();
 
     for item in devices {
         // See https://github.com/madsmtm/objc2/issues/743
         let device = item.downcast::<IOBluetoothDevice>().unwrap();
 
-        let devname = unsafe {device.name()};
+        let devname = unsafe { device.name() };
 
         debug!("Found Bluetooth device: {}", devname);
 
@@ -78,7 +79,7 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             ui.label(RichText::new("Bluetooth Menu:").size(36.0));
         });
 
-        if ui.button("Scan").clicked(){
+        if ui.button("Scan").clicked() {
             for item in get_nearby_bluetooth().unwrap() {
                 ui.label(item);
             }

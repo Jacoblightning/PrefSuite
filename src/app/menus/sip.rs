@@ -31,35 +31,35 @@ pub struct SIPData {
 
 #[cfg(target_os = "macos")]
 fn get_sip() -> Result<u32, String> {
-
     info!("Loading /usr/lib/libSystem.dylib");
 
-    let lib = match unsafe {libloading::Library::new("/usr/lib/libSystem.dylib")} {
+    let lib = match unsafe { libloading::Library::new("/usr/lib/libSystem.dylib") } {
         Ok(lib) => lib,
         Err(e) => {
             error!("Failed to load libSystem.dylib: {}", e);
-            return Err(e.to_string())
-        },
+            return Err(e.to_string());
+        }
     };
     trace!("Successfully loaded /usr/lib/libSystem.dylib");
     debug!("Loading function csr_get_active_config");
 
-    let func: libloading::Symbol<unsafe extern "C" fn(*mut u32) -> i32> = match unsafe { lib.get(b"csr_get_active_config") } {
-        Ok(func) => func,
-        Err(e) => {
-            error!("Failed to load function csr_get_active_config: {}", e);
-            return Err(e.to_string())
-        }
-    };
+    let func: libloading::Symbol<unsafe extern "C" fn(*mut u32) -> i32> =
+        match unsafe { lib.get(b"csr_get_active_config") } {
+            Ok(func) => func,
+            Err(e) => {
+                error!("Failed to load function csr_get_active_config: {}", e);
+                return Err(e.to_string());
+            }
+        };
 
     trace!("Successfully loaded /usr/lib/libSystem.dylib");
 
     debug!("Calling sip_active_config function");
     let mut sip_bits: u32 = 0;
-    let sip_err = unsafe {func(&raw mut sip_bits)};
+    let sip_err = unsafe { func(&raw mut sip_bits) };
     if sip_err != 0 {
         error!("sip_active_config function failed: {}", sip_err);
-        return Err(sip_err.to_string())
+        return Err(sip_err.to_string());
     }
     trace!("Successfully called sip_active_config function");
     info!("sip bits: {}", sip_bits);
@@ -100,7 +100,7 @@ fn is_sip_disabled(bits: u32, version: &Version) -> bool {
     }
 
     // check or allow_executable_policy_override
-    if (bits & 1024)  == 0 {
+    if (bits & 1024) == 0 {
         return false;
     } else if version < &big_sur {
         return true;
@@ -116,28 +116,43 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     let mojave = Version::Semantic(10, 14, 0);
     let big_sur = Version::Semantic(11, 0, 0);
 
-    ui.label(RichText::new(format!(
-        "CSR/SIP is: {}",
-        if bits == 0 {"Fully Enabled"} else if is_sip_disabled(bits, version) {"Fully Disabled"} else {"Custom:"}
-    )).size(32.0));
     ui.label(
-        format!(
-            "CSR_ALLOW_UNTRUSTED_KEXTS (Allow unsigned kernel drivers to be installed and loaded): {}",
-            if (bits & (1 << 0)) != 0 {"Allowed"} else {"Forbidden"}
-        )
+        RichText::new(format!(
+            "CSR/SIP is: {}",
+            if bits == 0 {
+                "Fully Enabled"
+            } else if is_sip_disabled(bits, version) {
+                "Fully Disabled"
+            } else {
+                "Custom:"
+            }
+        ))
+        .size(32.0),
     );
-    ui.label(
-        format!(
-            "CSR_ALLOW_UNRESTRICTED_FS (Allows unrestricted filesystem access): {}",
-            if (bits & (1 << 1)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
-    ui.label(
-        format!(
-            "CSR_ALLOW_TASK_FOR_PID (Alows tracking processes based off of a provided process ID): {}",
-            if (bits & (1 << 2)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
+    ui.label(format!(
+        "CSR_ALLOW_UNTRUSTED_KEXTS (Allow unsigned kernel drivers to be installed and loaded): {}",
+        if (bits & (1 << 0)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
+    ui.label(format!(
+        "CSR_ALLOW_UNRESTRICTED_FS (Allows unrestricted filesystem access): {}",
+        if (bits & (1 << 1)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
+    ui.label(format!(
+        "CSR_ALLOW_TASK_FOR_PID (Alows tracking processes based off of a provided process ID): {}",
+        if (bits & (1 << 2)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
     ui.label(
         format!(
             "CSR_ALLOW_KERNEL_DEBUGGER (Allows attacking a low level kernel debugger to the system): {}",
@@ -150,18 +165,22 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
             if (bits & (1 << 4)) != 0 {"Allowed"} else {"Forbidden"}
         )
     );
-    ui.label(
-        format!(
-            "CSR_ALLOW_UNRESTRICTED_DTRACE (Allows unrestricted dtrace usage): {}",
-            if (bits & (1 << 5)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
-    ui.label(
-        format!(
-            "CSR_ALLOW_UNRESTRICTED_NVRAM (Allows unrestricted NVRAM write): {}",
-            if (bits & (1 << 6)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
+    ui.label(format!(
+        "CSR_ALLOW_UNRESTRICTED_DTRACE (Allows unrestricted dtrace usage): {}",
+        if (bits & (1 << 5)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
+    ui.label(format!(
+        "CSR_ALLOW_UNRESTRICTED_NVRAM (Allows unrestricted NVRAM write): {}",
+        if (bits & (1 << 6)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
     ui.label(
         format!(
             "CSR_ALLOW_DEVICE_CONFIGURATION (Allows custom device trees (based off of speculation. There is little public info on what this bit does)): {}",
@@ -182,32 +201,38 @@ fn show_sip_bits(ui: &mut egui::Ui, bits: u32, version: &Version) {
     if version < &high_sierra {
         return;
     }
-    ui.label(
-        format!(
-            "CSR_ALLOW_UNAPPROVED_KEXTS (Allows unapproved kernel driver installation/loading): {}",
-            if (bits & (1 << 9)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
+    ui.label(format!(
+        "CSR_ALLOW_UNAPPROVED_KEXTS (Allows unapproved kernel driver installation/loading): {}",
+        if (bits & (1 << 9)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
     // Same for High Sierra
     if version < &mojave {
         return;
     }
-    ui.label(
-        format!(
-            "CSR_ALLOW_EXECUTABLE_POLICY_OVERRIDE (Allows override of executable policy): {}",
-            if (bits & (1 << 10)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
+    ui.label(format!(
+        "CSR_ALLOW_EXECUTABLE_POLICY_OVERRIDE (Allows override of executable policy): {}",
+        if (bits & (1 << 10)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
     // Same for Mojave
     if version < &big_sur {
         return;
     }
-    ui.label(
-        format!(
-            "CSR_ALLOW_UNAUTHENTICATED_ROOT (Allows custom APFS snapshots to be booted): {}",
-            if (bits & (1 << 11)) != 0 {"Allowed"} else {"Forbidden"}
-        )
-    );
+    ui.label(format!(
+        "CSR_ALLOW_UNAUTHENTICATED_ROOT (Allows custom APFS snapshots to be booted): {}",
+        if (bits & (1 << 11)) != 0 {
+            "Allowed"
+        } else {
+            "Forbidden"
+        }
+    ));
 }
 
 pub fn main(app: &mut MyApp, ctx: &egui::Context) {
@@ -229,10 +254,11 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
             return;
         }
 
-
         if app.sip_data.bits.is_none() {
             match get_sip() {
-                Ok(bits) => {app.sip_data.bits = Some(bits);},
+                Ok(bits) => {
+                    app.sip_data.bits = Some(bits);
+                }
                 Err(e) => {
                     error!("Failed to get SIP: {e}");
                 }
@@ -242,6 +268,5 @@ pub fn main(app: &mut MyApp, ctx: &egui::Context) {
         if let Some(bits) = app.sip_data.bits {
             show_sip_bits(ui, bits, version);
         }
-
     });
 }

@@ -35,17 +35,22 @@ pub struct SoundData {
 
 /// VERY expensive function. Do NOT call unless required
 fn get_volume() -> Result<u8, String> {
-    Ok(command_output!("osascript", "-e", "output volume of (get volume settings)")
-        .strip_suffix("\n")
-        .unwrap()
-        .parse::<u8>()
-        .unwrap()
+    Ok(
+        command_output!("osascript", "-e", "output volume of (get volume settings)")
+            .strip_suffix("\n")
+            .unwrap()
+            .parse::<u8>()
+            .unwrap(),
     )
 }
 
 /// VERY expensive function. Do NOT call unless required
 fn set_volume(volume: u8) -> Result<(), String> {
-    run_command!("osascript", "-e", format!("set volume output volume {volume}"));
+    run_command!(
+        "osascript",
+        "-e",
+        format!("set volume output volume {volume}")
+    );
     Ok(())
 }
 
