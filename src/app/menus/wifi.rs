@@ -76,7 +76,7 @@ fn set_wifi(on: bool) -> Result<(), String> {
 
 
 #[cfg(target_os = "macos")]
-fn get_current_wifi_ffi() -> Oprion<String> {
+fn get_current_wifi_ffi() -> Option<String> {
     match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
         Some(interface) => match unsafe {interface.ssid()} {
             Some(ssid) => Some(ssid.to_string()),
