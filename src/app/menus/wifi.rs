@@ -18,6 +18,7 @@
 
 use crate::app::password as egui_password;
 use crate::app::{Menu, MyApp};
+use log::{debug, error, log_enabled, info, Level};
 use crate::{command_output, run_command};
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -109,7 +110,7 @@ fn get_wifi_name() -> Result<String, String> {
 fn get_wifi_name_ffi(is_second_call: bool) -> Result<String, String> {
     match unsafe { objc2_core_wlan::CWWiFiClient::sharedWiFiClient().interface() } {
         Some(interface) => match unsafe {interface.ssid()} {
-            Some(ssid) => Ok(unsafe {ssid.to_string()}),
+            Some(ssid) => Ok(ssid.to_string()),
             None => {
                 if !is_second_call {
                     // Try again after requesting location permission
