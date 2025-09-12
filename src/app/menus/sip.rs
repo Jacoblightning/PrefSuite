@@ -33,6 +33,7 @@ pub struct SIPData {
 fn get_sip() -> Result<u32, String> {
     info!("Loading /usr/lib/libSystem.dylib");
 
+    // Load the library libSystem.dylib, where the function to get the current SIP config is stored
     let lib = match unsafe { libloading::Library::new("/usr/lib/libSystem.dylib") } {
         Ok(lib) => lib,
         Err(e) => {
@@ -43,6 +44,7 @@ fn get_sip() -> Result<u32, String> {
     trace!("Successfully loaded /usr/lib/libSystem.dylib");
     debug!("Loading function csr_get_active_config");
 
+    // The function to get the current SIP (csr) config.
     let func: libloading::Symbol<unsafe extern "C" fn(*mut u32) -> i32> =
         match unsafe { lib.get(b"csr_get_active_config") } {
             Ok(func) => func,

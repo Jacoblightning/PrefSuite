@@ -253,6 +253,7 @@ fn get_wifi_info_heuristic() -> Option<WifiInfo> {
 
     if nearby.is_none() || current.is_none() {
         // Reliable method (at least currently) but SLOOOOOOW!!!
+        info!("At least one failed. Using slow (but reliable) backup method.");
         let mut wifi_info_json = json::parse(
             &command_output_option!("system_profiler", "-json", "SPAirPortDataType")
         ).unwrap();
