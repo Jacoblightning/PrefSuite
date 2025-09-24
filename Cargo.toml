@@ -35,4 +35,4 @@ objc2-io-bluetooth = "^0.3.1"
 # For wifi SSIDs (stupid apple) (might be used for loc services later)
 # objc2-core-location = "^0.3.1"
 
-libloading = "^0.8.8"
+libloading = "^0.8.9"
