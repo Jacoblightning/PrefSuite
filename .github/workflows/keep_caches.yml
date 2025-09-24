@@ -1,0 +1,34 @@
+name: Keep Caches
+
+on: 
+  schedule:
+    # We need to run it within a week of the last run. (So it can't be exactly a week.)
+    # This is annoying so instead, we just run twice a week
+    - cron: "0 0 * * 0,3"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        cachearch: [x86_64, arm64]
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Retrieve Cache
+      id: cache-deps
+      uses: actions/cache@v4
+      with:
+        # Set the restore key to be the actual key bc the cache action will not save a cache if it was hit
+        key: ${{ matrix.cachearch }}-cargo-deps-${{ hashFiles('Cargo.lock') }}
+        path: |
+          ./target
+          ~/.cargo
+        restore-keys: |
+          ${{ matrix.cachearch }}-cargo-deps-
