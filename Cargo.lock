@@ -14,7 +14,7 @@ dependencies = [
  "libloading",
  "log",
  "objc2-core-wlan",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
  "objc2-io-bluetooth",
  "os_info",
  "rfd",
@@ -278,7 +278,7 @@ dependencies = [
  "objc2-app-kit 0.3.1",
  "objc2-core-foundation",
  "objc2-core-graphics",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
  "parking_lot",
  "percent-encoding",
  "windows-sys 0.60.2",
@@ -1581,7 +1581,7 @@ dependencies = [
  "objc2 0.6.2",
  "objc2-app-kit 0.3.1",
  "objc2-core-foundation",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
  "once_cell",
  "raw-window-handle",
  "wayland-sys",
@@ -2471,7 +2471,7 @@ dependencies = [
  "objc2 0.6.2",
  "objc2-core-foundation",
  "objc2-core-graphics",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]
@@ -2512,9 +2512,9 @@ dependencies = [
 
 [[package]]
 name = "objc2-core-foundation"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c10c2894a6fed806ade6027bcd50662746363a9589d3ec9d9bef30a4e4bc166"
+checksum = "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536"
 dependencies = [
  "bitflags 2.9.4",
  "dispatch2",
@@ -2567,7 +2567,7 @@ dependencies = [
  "bitflags 2.9.4",
  "objc2 0.6.2",
  "objc2-core-foundation",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
  "objc2-security",
 ]
 
@@ -2592,9 +2592,9 @@ dependencies = [
 
 [[package]]
 name = "objc2-foundation"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "900831247d2fe1a09a683278e5384cfb8c80c79fe6b166f9d14bfdde0ea1b03c"
+checksum = "e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272"
 dependencies = [
  "bitflags 2.9.4",
  "block2 0.6.1",
@@ -2612,7 +2612,7 @@ dependencies = [
  "libc",
  "objc2 0.6.2",
  "objc2-core-foundation",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]
@@ -3335,7 +3335,7 @@ dependencies = [
  "objc2 0.6.2",
  "objc2-app-kit 0.3.1",
  "objc2-core-foundation",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
  "pollster",
  "raw-window-handle",
  "urlencoding",
@@ -4268,7 +4268,7 @@ dependencies = [
  "log",
  "ndk-context",
  "objc2 0.6.2",
- "objc2-foundation 0.3.1",
+ "objc2-foundation 0.3.2",
  "url",
  "web-sys",
 ]
