@@ -23,7 +23,7 @@ os_info = { version = "^3.12.0", default-features = false }
 
 # Logging. Obviously
 env_logger = "^0.11.8"
-log = "^0.4.28"
+log = "^0.4.29"
 
 json = "0.12.4"
 
