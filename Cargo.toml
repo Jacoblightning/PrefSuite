@@ -13,7 +13,7 @@ rfd = "^0.17.2"
 # Non GUI
 rusqlite = { version = "^0.37.0", features = ["bundled"] }
 strum = "^0.27.1"
-strum_macros = "^0.27.1"
+strum_macros = "^0.28.0"
 
 # I saw somewhere, someone said that adding this just to kill a process is bloat. Sadly, I agree
 sysinfo = "^0.38.0"
